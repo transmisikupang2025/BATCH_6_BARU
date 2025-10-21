@@ -310,7 +310,7 @@
         // GANTI DENGAN NILAI PROYEK ANDA YANG SEBENARNYA
         // ===========================================
         const SUPABASE_URL = 'https://ixbujhmqvbmyihvocfmw.supabase.co'; 
-        const SUPABASE_ANON_KEY = 'YOUR_ACTUAL_ANON_KEY_FROM_SUPABASE'; 
+        const SUPABASE_ANON_KEY = 'process.env.SUPABASE_KEY'; 
         
         // Cek apakah kunci telah diatur sebelum menginisialisasi
         const supabase = SUPABASE_URL && SUPABASE_ANON_KEY 
@@ -418,6 +418,7 @@
                 room: item.room,
                 rackCode: item.rackCode,
                 date: item.date,
+                timestamp: new Date().toISOString()
             };
 
             const { error } = await supabase
@@ -442,6 +443,7 @@
                 date: item.date,
                 notes: item.notes,
                 returned: false,
+                timestamp: new Date().toISOString()
             };
 
             const { error } = await supabase
@@ -1302,6 +1304,3 @@
     </script>
 </body>
 </html>
-
-
-
