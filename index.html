@@ -309,9 +309,10 @@
         // 2. Inisialisasi Supabase
         // GANTI DENGAN NILAI PROYEK ANDA YANG SEBENARNYA
         // ===========================================
-        const SUPABASE_URL = 'https://ixbujhmqvbmyihvocfmw.supabase.co' 
-        const SUPABASE_ANON_KEY = process.env.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4YnVqaG1xdmJteWlodm9jZm13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEwMDg4MTMsImV4cCI6MjA3NjU4NDgxM30.Jja-9XyFfiOYKK9-E2rtosSm4Dp315PR0zTOmXFaFYw
-        
+        import { createClient } from '@supabase/supabase-js'
+        const SUPABASE_UR = 'https://ixbujhmqvbmyihvocfmw.supabase.co'
+        const SUPABASE_ANON_KEY  = process.env.v+V2xRIGjHtPr8yMGdV9er+hSzVERDBx34guL5va6+alWiPkzzXT4HMF6QPU5Wzlesqo54unOoY9V3RsOUr0BA==
+        const supabase = createClient(supabaseUrl, supabaseKey)
         // Cek apakah kunci telah diatur sebelum menginisialisasi
         const supabase = SUPABASE_URL && SUPABASE_ANON_KEY 
             ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
@@ -1304,6 +1305,7 @@
     </script>
 </body>
 </html>
+
 
 
 
