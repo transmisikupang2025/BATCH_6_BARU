@@ -418,7 +418,6 @@
                 room: item.room,
                 rackCode: item.rackCode,
                 date: item.date,
-                timestamp: new Date().toISOString()
             };
 
             const { error } = await supabase
@@ -443,7 +442,6 @@
                 date: item.date,
                 notes: item.notes,
                 returned: false,
-                timestamp: new Date().toISOString()
             };
 
             const { error } = await supabase
@@ -1304,5 +1302,6 @@
     </script>
 </body>
 </html>
+
 
 
