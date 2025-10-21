@@ -307,10 +307,13 @@
     <script>
         // ===========================================
         // 2. Inisialisasi Supabase
-        const SUPABASE_UR = 'https://ixbujhmqvbmyihvocfmw.supabase.co'
-        const SUPABASE_ANON_KEY = 'YOUR_ACTUAL_ANON_KEY_FROM_SUPABASE';
-        const supabase = createClient(supabaseUrl, supabaseKey)
+        const SUPABASE_URL = 'https://ixbujhmqvbmyihvocfmw.supabase.co'; 
+        const SUPABASE_ANON_KEY = 'process.env.SUPABASE_KEY; 
+        
         // Cek apakah kunci telah diatur sebelum menginisialisasi
+        const supabase = SUPABASE_URL && SUPABASE_ANON_KEY 
+            ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+            : null;
         const supabase = SUPABASE_URL && SUPABASE_ANON_KEY 
             ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
             : null;
@@ -1302,6 +1305,7 @@
     </script>
 </body>
 </html>
+
 
 
 
