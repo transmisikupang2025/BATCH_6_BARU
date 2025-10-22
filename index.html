@@ -266,33 +266,28 @@
         </div>
     </footer>
 
-    <script>
-        // ===========================================
-        // 1. KONEKSI SUPABASE
-        // ===========================================
+<script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-               
-        const SUPABASE_URL = 'https://ixbujhmqvbmyihvocfmw.supabase.co'; 
-        
-        // Kunci Anonim yang sudah dikoreksi dan dimasukkan
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4YnVqaG1xdmJteWlodm9jZm13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEwMDg4MTMsImV4cCI6MjA3NjU4NDgxM30.Jja-9XyFfiOYKK9-E2rtosSm4Dp315PR0zTOmXFaFYw'; 
-        
-        let supabase = null;
-        
-        // Perbaikan Inisialisasi: Membuat objek Supabase langsung
-        try {
-            if (SUPABASE_ANON_KEY && SUPABASE_URL) {
-                // Objek 'supabase' global berasal dari CDN yang dimuat di <head>
-                supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            }
-        } catch (e) {
-            console.error("Error creating Supabase client:", e);
-        }
+  const SUPABASE_URL = 'https://ixbujhmqvbmyihvocfmw.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiI...'; // tetap hati-hati menyimpan key di client
 
-        if (!supabase) {
-            console.error("Supabase client not initialized. Please check your keys and URL.");
-            showMessage('❌ Koneksi database gagal. Cek konsol untuk detail.', 'error');
-        }
+  // Inisialisasi langsung dengan fungsi yang sudah diimport
+  let supabase = null;
+  try {
+    if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+      supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    } else {
+      console.error("Supabase URL atau key kosong.");
+    }
+  } catch (e) {
+    console.error("Error creating Supabase client:", e);
+  }
+
+  if (!supabase) {
+    console.error("Supabase client not initialized. Please check your keys and URL.");
+    showMessage('❌ Koneksi database gagal. Cek konsol untuk detail.', 'error');
+  }
 
         // Variabel global untuk cache data
         let incomingItems = []; // Semua data riwayat barang masuk
@@ -872,6 +867,7 @@
     </script>
 </body>
 </html>
+
 
 
 
