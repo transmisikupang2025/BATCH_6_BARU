@@ -306,29 +306,39 @@
 
     <script>
         // ===========================================
-        // 2. Inisialisasi Supabase
-        // GANTI DENGAN NILAI PROYEK ANDA YANG SEBENARNYA
+        // 2. KOREKSI INISIALISASI SUPABASE
         // ===========================================
         const SUPABASE_URL = 'https://ixbujhmqvbmyihvocfmw.supabase.co'; 
-        const SUPABASE_ANON_KEY = 'process.env.SUPABASE_KEY'; 
+        
+        // !!! KOREKSI KRITIS 1: Menggunakan string placeholder yang benar
+        // GANTI 'YOUR_SUPABASE_ANON_KEY_HERE' dengan kunci ANONIM proyek Anda
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY_HERE'; 
         
         // Cek apakah kunci telah diatur sebelum menginisialisasi
-        const supabase = SUPABASE_URL && SUPABASE_ANON_KEY 
+        const supabase = SUPABASE_URL && SUPABASE_ANON_KEY !== 'YOUR_SUPABASE_ANON_KEY_HERE'
             ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
             : null;
 
         if (!supabase) {
-            console.error("Supabase client not initialized. Please set SUPABASE_URL and SUPABASE_ANON_KEY.");
+            console.error("Supabase client not initialized. Please set SUPABASE_URL and SUPABASE_ANON_KEY correctly.");
+            // Tampilkan pesan error di UI agar pengguna tahu
+            document.getElementById('stockTableBody').innerHTML = `
+                <tr>
+                    <td colspan="5" class="px-6 py-12 text-center text-red-500">
+                        <p class="font-bold">KONEKSI GAGAL!</p>
+                        <p class="text-sm">Silakan ganti 'YOUR_SUPABASE_ANON_KEY_HERE' dengan kunci API Supabase Anda.</p>
+                    </td>
+                </tr>
+            `;
         }
 
         // Variabel global untuk menyimpan cache data dari Supabase
         let incomingItems = [];
         let outgoingItems = [];
-        let currentStock = {}; // Akan dihitung dari incoming & outgoing
+        let currentStock = {};
 
         // ===========================================
-        // 3. Fungsi Asinkron CRUD (Supabase Logic)
-        // Asumsi tabel di Supabase: incoming_items dan outgoing_items
+        // 3. FUNGSI CRUD (KOREKSI PENGIRIMAN DATA)
         // ===========================================
 
         /**
@@ -347,6 +357,7 @@
                 incomingItems = incomingData || [];
 
                 // Fetch Outgoing Items
+                // Jika kolom di Supabase BUKAN 'user', GANTI di sini juga (misal: select('*, user: outgoing_user'))
                 const { data: outgoingData, error: outgoingError } = await supabase
                     .from('outgoing_items')
                     .select('*')
@@ -355,7 +366,6 @@
                 if (outgoingError) throw outgoingError;
                 outgoingItems = outgoingData || [];
 
-                // Hitung ulang stok dan perbarui tampilan
                 recalculateStock();
                 updateAllDisplays();
 
@@ -366,14 +376,13 @@
         }
 
         /**
-         * Menghitung stok saat ini berdasarkan semua riwayat
+         * Menghitung stok saat ini berdasarkan semua riwayat (Logika tetap sama)
          */
         function recalculateStock() {
             currentStock = {};
             
             // 1. Add all incoming items
             incomingItems.forEach(item => {
-                // Gunakan nama dan kategori sebagai kunci unik
                 const key = `${item.name}|${item.category}`;
                 const quantity = parseInt(item.quantity);
                 
@@ -398,7 +407,6 @@
                     
                     if (currentStock[key]) {
                         currentStock[key].quantity -= quantity;
-                        // Hapus dari stok jika habis/kurang dari 0
                         if (currentStock[key].quantity <= 0) {
                             delete currentStock[key];
                         }
@@ -414,11 +422,14 @@
             const newItem = {
                 name: item.name,
                 category: item.category,
-                quantity: parseInt(item.quantity),
+                // KOREKSI 2: Pastikan konversi ke integer yang benar
+                quantity: parseInt(item.quantity, 10), 
                 room: item.room,
                 rackCode: item.rackCode,
-                date: item.date,
-                timestamp: new Date().toISOString()
+                // KOREKSI 3: Tipe Date sudah sesuai format YYYY-MM-DD
+                date: item.date, 
+                // KOREKSI 4: Hapus pengiriman TIMESTAMP, biarkan Supabase mengisi secara otomatis
+                // Hapus: timestamp: new Date().toISOString()
             };
 
             const { error } = await supabase
@@ -427,7 +438,6 @@
             
             if (error) throw error;
             
-            // Refetch data setelah insert
             await fetchData();
         }
 
@@ -438,12 +448,17 @@
             const newItem = {
                 name: item.name,
                 category: item.category,
-                quantity: parseInt(item.quantity),
-                user: item.user,
+                // KOREKSI 2: Pastikan konversi ke integer yang benar
+                quantity: parseInt(item.quantity, 10),
+                // KOREKSI 5: Mengantisipasi konflik penamaan 'user'
+                // Jika Anda mengganti nama kolom 'user' di Supabase menjadi 'penerima',
+                // ubah di sini menjadi: penerima: item.user
+                user: item.user, 
                 date: item.date,
                 notes: item.notes,
                 returned: false,
-                timestamp: new Date().toISOString()
+                // KOREKSI 4: Hapus pengiriman TIMESTAMP, biarkan Supabase mengisi secara otomatis
+                // Hapus: timestamp: new Date().toISOString()
             };
 
             const { error } = await supabase
@@ -452,7 +467,6 @@
 
             if (error) throw error;
             
-            // Refetch data setelah insert
             await fetchData();
         }
 
@@ -465,11 +479,10 @@
             const { error } = await supabase
                 .from(table)
                 .delete()
-                .eq('id', id); // Asumsi kolom primary key di Supabase adalah 'id'
+                .eq('id', id);
 
             if (error) throw error;
             
-            // Refetch data setelah delete
             await fetchData();
         }
 
@@ -479,19 +492,18 @@
         async function returnItemInDB(outgoingId) {
             const { error } = await supabase
                 .from('outgoing_items')
-                .update({ returned: true, returnDate: new Date().toISOString() })
+                // KOREKSI 6: returnDate harus diisi oleh JS, karena ini adalah kolom update, bukan insert
+                .update({ returned: true, returnDate: new Date().toISOString() }) 
                 .eq('id', outgoingId);
                 
             if (error) throw error;
 
-            // Refetch data setelah update
             await fetchData();
         }
 
-        // --- GETTERS (Menggunakan cache lokal) ---
+        // --- GETTERS, Handlers, dan Display Functions (Logika sama) ---
 
         function getAvailableItems() {
-            // Ubah Objek currentStock menjadi Array
             return Object.values(currentStock).filter(item => item.quantity > 0);
         }
 
@@ -503,7 +515,6 @@
         function getRoomCapacity() {
             const roomCapacity = {};
             
-            // Gabungkan data dari incomingItems & outgoingItems untuk menghitung kapasitas
             incomingItems.forEach(item => {
                 if (!roomCapacity[item.room]) {
                     roomCapacity[item.room] = { incoming: 0, outgoing: 0, room: item.room };
@@ -513,7 +524,6 @@
             
             outgoingItems.forEach(item => {
                 if (!item.returned) {
-                    // Coba temukan ruang dari item incoming yang cocok
                     const incomingMatch = incomingItems.find(inc => 
                         inc.name === item.name && inc.category === item.category
                     );
@@ -524,7 +534,6 @@
                 }
             });
             
-            // Hitung kapasitas saat ini
             Object.keys(roomCapacity).forEach(room => {
                 roomCapacity[room].current = roomCapacity[room].incoming - roomCapacity[room].outgoing;
                 roomCapacity[room].percentage = (roomCapacity[room].current / 50) * 100;
@@ -533,22 +542,15 @@
             return roomCapacity;
         }
 
-        // ===========================================
-        // 4. Inisialisasi dan Event Handlers (Diubah ke Async)
-        // ===========================================
-
         // Inisialisasi Aplikasi
         document.addEventListener('DOMContentLoaded', async function() {
-            // Set today's date as default
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('incomingDate').value = today;
             document.getElementById('outgoingDate').value = today;
 
-            // Load initial data dari Supabase
             await fetchData();
         });
 
-        // Tab switching (tetap sama)
         function showTab(tabName) {
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.add('hidden');
@@ -564,7 +566,6 @@
             document.getElementById(tabName + 'Tab').className = 'tab-button flex-1 py-3 px-6 rounded-xl font-semibold transition-all duration-200 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md';
         }
 
-        // Show success/error messages (tetap sama)
         function showMessage(message, type = 'success') {
             const messageContainer = document.getElementById('messageContainer');
             const messageDiv = document.createElement('div');
@@ -588,7 +589,7 @@
             }, 5000);
         }
 
-        // Handle incoming items form (diubah menjadi async)
+        // Handle incoming items form
         document.getElementById('incomingForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -602,18 +603,17 @@
             };
             
             try {
-                await addIncomingItemDB(formData); // Panggil fungsi Supabase
+                await addIncomingItemDB(formData);
                 showMessage(`✅ Berhasil menambahkan ${formData.quantity} ${formData.name} ke inventory`);
                 this.reset();
                 document.getElementById('incomingDate').value = new Date().toISOString().split('T')[0];
-                // updateAllDisplays() dipanggil di dalam fetchData()
             } catch (error) {
                 console.error('Incoming form error:', error);
                 showMessage('❌ Gagal menambahkan barang masuk: ' + error.message, 'error');
             }
         });
 
-        // Handle outgoing items form (diubah menjadi async)
+        // Handle outgoing items form
         document.getElementById('outgoingForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -646,18 +646,16 @@
             };
             
             try {
-                await addOutgoingItemDB(formData); // Panggil fungsi Supabase
+                await addOutgoingItemDB(formData);
                 showMessage(`✅ Berhasil mengeluarkan ${quantity} ${name} dari inventory`);
                 this.reset();
                 document.getElementById('outgoingDate').value = new Date().toISOString().split('T')[0];
-                // updateAllDisplays() dipanggil di dalam fetchData()
             } catch (error) {
                 console.error('Outgoing form error:', error);
                 showMessage('❌ Gagal menambahkan barang keluar: ' + error.message, 'error');
             }
         });
 
-        // Update available stock when item is selected (tetap sama)
         document.getElementById('outgoingItemSelect').addEventListener('change', function() {
             const selectedItem = this.value;
             const availableStockSpan = document.getElementById('availableStock');
@@ -665,7 +663,7 @@
             
             if (selectedItem) {
                 const [name, category] = selectedItem.split('|');
-                const stock = getStockByKey(name, category); // Gunakan fungsi getter lokal
+                const stock = getStockByKey(name, category);
                 availableStockSpan.textContent = stock;
                 quantityInput.max = stock;
                 quantityInput.value = '';
@@ -676,7 +674,6 @@
             }
         });
 
-        // Update all displays
         function updateAllDisplays() {
             updateStockTable();
             updateIncomingHistory();
@@ -686,7 +683,6 @@
             updateStorageCapacity();
         }
 
-        // Update stock table (menggunakan data cache)
         function updateStockTable() {
             const tbody = document.getElementById('stockTableBody');
             const availableItems = getAvailableItems();
@@ -709,7 +705,6 @@
             }
             
             tbody.innerHTML = availableItems.map(item => {
-                // Gunakan properti room dan rackCode dari item stock yang sudah dihitung
                 const rackCode = item.rackCode || 'Tidak diketahui';
                 
                 return `
@@ -740,10 +735,9 @@
             }).join('');
         }
 
-        // Update incoming history (menggunakan data cache)
         function updateIncomingHistory() {
             const container = document.getElementById('incomingHistory');
-            const items = incomingItems; // Sudah diurutkan berdasarkan timestamp di fetchData
+            const items = incomingItems;
             
             if (items.length === 0) {
                 container.innerHTML = `
@@ -784,10 +778,9 @@
             `).join('');
         }
 
-        // Update outgoing history (menggunakan data cache)
         function updateOutgoingHistory() {
             const container = document.getElementById('outgoingHistory');
-            const items = outgoingItems; // Sudah diurutkan berdasarkan timestamp di fetchData
+            const items = outgoingItems;
             
             if (items.length === 0) {
                 container.innerHTML = `
@@ -840,7 +833,6 @@
             `).join('');
         }
 
-        // Update outgoing select options (menggunakan data cache)
         function updateOutgoingSelect() {
             const select = document.getElementById('outgoingItemSelect');
             const availableItems = getAvailableItems();
@@ -849,18 +841,16 @@
             
             availableItems.forEach(item => {
                 const option = document.createElement('option');
-                // Gunakan '|' sebagai pemisah yang sama dengan logika sebelumnya
                 option.value = `${item.name}|${item.category}`;
                 option.textContent = `${item.name} (${item.category}) - Stok: ${item.quantity}`;
                 select.appendChild(option);
             });
         }
 
-        // Update summary (menggunakan data cache)
         function updateSummary() {
             const totalIncoming = incomingItems.reduce((sum, item) => sum + parseInt(item.quantity), 0);
             const totalOutgoing = outgoingItems.reduce((sum, item) => {
-                return sum + (item.returned ? 0 : parseInt(item.quantity)); // Hanya hitung yang belum kembali
+                return sum + (item.returned ? 0 : parseInt(item.quantity));
             }, 0);
             const remainingStock = Object.values(currentStock).reduce((sum, item) => sum + item.quantity, 0);
             const totalItems = Object.keys(currentStock).length;
@@ -871,7 +861,6 @@
             document.getElementById('totalItems').textContent = totalItems;
         }
 
-        // Update storage capacity display (menggunakan data cache)
         function updateStorageCapacity() {
             const container = document.getElementById('storageCapacityContainer');
             const roomCapacity = getRoomCapacity();
@@ -946,11 +935,9 @@
             }).join('');
         }
 
-        // Delete item function (diubah menjadi async)
         function deleteItem(type, id) {
             let item;
             if (type === 'incoming') {
-                // Gunakan == karena id dari Supabase mungkin bertipe number
                 item = incomingItems.find(i => i.id == id);
             } else if (type === 'outgoing') {
                 item = outgoingItems.find(i => i.id == id);
@@ -964,9 +951,7 @@
             showDeleteConfirmation(type, item);
         }
 
-        // Show delete confirmation dialog (memanggil confirmDelete async)
         function showDeleteConfirmation(type, item) {
-            // ... (Kode showDeleteConfirmation sama)
             const isIncoming = type === 'incoming';
             const title = isIncoming ? 'Konfirmasi Hapus Barang Masuk' : 'Konfirmasi Hapus Barang Keluar';
             const message = isIncoming ? 
@@ -1059,26 +1044,23 @@
             });
         }
 
-        // Confirm delete function (diubah menjadi async)
         async function confirmDelete(type, id) {
             try {
                 const item = type === 'incoming' ? 
                     incomingItems.find(i => i.id == id) : 
                     outgoingItems.find(i => i.id == id);
                 
-                await deleteItemFromDB(type, id); // Panggil fungsi Supabase
+                await deleteItemFromDB(type, id);
                 
                 const itemType = type === 'incoming' ? 'barang masuk' : 'barang keluar';
                 showMessage(`✅ Data ${itemType} "${item.name}" berhasil dihapus!`);
                 closeDeleteModal();
-                // updateAllDisplays() dipanggil di dalam fetchData()
             } catch (error) {
                 console.error('Delete error:', error);
                 showMessage('❌ Gagal menghapus item: ' + error.message, 'error');
             }
         }
 
-        // Close delete modal (tetap sama)
         function closeDeleteModal() {
             const modal = document.querySelector('.fixed.inset-0.bg-black.bg-opacity-50');
             if (modal) {
@@ -1094,7 +1076,6 @@
             }
         }
 
-        // Return item function (diubah menjadi async)
         function returnItem(outgoingId) {
             const outgoingItem = outgoingItems.find(item => item.id == outgoingId);
             if (!outgoingItem || outgoingItem.returned) {
@@ -1104,9 +1085,7 @@
             showReturnConfirmation(outgoingItem);
         }
 
-        // Show return confirmation dialog (memanggil confirmReturn async)
         function showReturnConfirmation(item) {
-            // ... (Kode showReturnConfirmation sama)
             const modalOverlay = document.createElement('div');
             modalOverlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
             modalOverlay.innerHTML = `
@@ -1176,22 +1155,19 @@
         }
 
 
-        // Confirm return function (diubah menjadi async)
         async function confirmReturn(outgoingId) {
             try {
                 const outgoingItem = outgoingItems.find(item => item.id == outgoingId);
-                await returnItemInDB(outgoingId); // Panggil fungsi Supabase
+                await returnItemInDB(outgoingId);
                 
                 showMessage(`✅ Barang berhasil dikembalikan! Stok ${outgoingItem.name} bertambah ${outgoingItem.quantity} unit`);
                 closeReturnModal();
-                // updateAllDisplays() dipanggil di dalam fetchData()
             } catch (error) {
                 console.error('Return error:', error);
                 showMessage('❌ Gagal mengembalikan barang: ' + error.message, 'error');
             }
         }
 
-        // Close return modal (tetap sama)
         function closeReturnModal() {
             const modal = document.querySelector('.fixed.inset-0.bg-black.bg-opacity-50');
             if (modal) {
@@ -1205,13 +1181,10 @@
             }
         }
 
-        // Export to Excel function (menggunakan data cache)
         function exportToExcel() {
             try {
-                // ... (Logika Export tetap sama, hanya menggunakan variabel cache: incomingItems, outgoingItems, currentStock, getAvailableItems(), getRoomCapacity())
                 const workbook = XLSX.utils.book_new();
                 
-                // Prepare Current Stock data
                 const currentStockData = getAvailableItems().map(item => ({
                     'Nama Barang': item.name,
                     'Kategori': item.category,
@@ -1220,7 +1193,6 @@
                     'Stok': item.quantity
                 }));
                 
-                // Prepare Incoming Items data
                 const incomingData = incomingItems.map(item => ({
                     'Nama Barang': item.name,
                     'Kategori': item.category,
@@ -1231,7 +1203,6 @@
                     'Waktu Input': new Date(item.timestamp).toLocaleString('id-ID')
                 }));
                 
-                // Prepare Outgoing Items data
                 const outgoingData = outgoingItems.map(item => ({
                     'Nama Barang': item.name,
                     'Kategori': item.category,
@@ -1244,7 +1215,6 @@
                     'Waktu Input': new Date(item.timestamp).toLocaleString('id-ID')
                 }));
                 
-                // Prepare Summary data
                 const totalIncoming = incomingItems.reduce((sum, item) => sum + parseInt(item.quantity), 0);
                 const totalOutgoing = outgoingItems.reduce((sum, item) => {
                     return sum + (item.returned ? 0 : parseInt(item.quantity));
@@ -1259,7 +1229,6 @@
                     { 'Keterangan': 'Jenis Barang', 'Jumlah': totalItems }
                 ];
                 
-                // Prepare Room Capacity data
                 const roomCapacity = getRoomCapacity();
                 const roomData = Object.keys(roomCapacity).map(room => ({
                     'Nama Ruang': room,
@@ -1271,27 +1240,23 @@
                              roomCapacity[room].percentage >= 70 ? 'Hampir Penuh' : 'Aman'
                 }));
                 
-                // Create worksheets
                 const currentStockWS = XLSX.utils.json_to_sheet(currentStockData);
                 const incomingWS = XLSX.utils.json_to_sheet(incomingData);
                 const outgoingWS = XLSX.utils.json_to_sheet(outgoingData);
                 const summaryWS = XLSX.utils.json_to_sheet(summaryData);
                 const roomWS = XLSX.utils.json_to_sheet(roomData);
                 
-                // Add worksheets to workbook
                 XLSX.utils.book_append_sheet(workbook, summaryWS, "Ringkasan");
                 XLSX.utils.book_append_sheet(workbook, currentStockWS, "Stok Terkini");
                 XLSX.utils.book_append_sheet(workbook, incomingWS, "Barang Masuk");
                 XLSX.utils.book_append_sheet(workbook, outgoingWS, "Barang Keluar");
                 XLSX.utils.book_append_sheet(workbook, roomWS, "Kapasitas Ruang");
                 
-                // Generate filename with current date
                 const now = new Date();
                 const dateStr = now.toISOString().split('T')[0];
                 const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
                 const filename = `Inventory_Data_${dateStr}_${timeStr}.xlsx`;
                 
-                // Save the file
                 XLSX.writeFile(workbook, filename);
                 
                 showMessage('✅ Data berhasil diekspor ke Excel!');
