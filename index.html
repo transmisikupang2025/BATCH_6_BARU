@@ -21,7 +21,6 @@
     </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
-    <!-- Header -->
     <header class="bg-white shadow-lg border-b border-gray-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div class="flex items-center justify-between">
@@ -47,7 +46,6 @@
     </header>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Navigation Tabs -->
         <div class="bg-white rounded-2xl shadow-lg p-2 mb-8">
             <nav class="flex space-x-2">
                 <button onclick="showTab('stock')" id="stockTab" class="tab-button flex-1 py-3 px-6 rounded-xl font-semibold transition-all duration-200 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md">
@@ -65,9 +63,7 @@
             </nav>
         </div>
 
-        <!-- Stock Overview Tab -->
         <div id="stockContent" class="tab-content">
-            <!-- Summary Card -->
             <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 mb-8">
                 <h3 class="text-xl font-semibold text-gray-900 mb-4">Ringkasan Stok Total</h3>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="stockSummary">
@@ -86,7 +82,6 @@
                 </div>
             </div>
 
-            <!-- Current Stock Table -->
             <div class="bg-white rounded-2xl shadow-lg border border-gray-100">
                 <div class="p-6 border-b border-gray-200">
                     <h3 class="text-xl font-semibold text-gray-900">Daftar Stok Barang</h3>
@@ -103,7 +98,6 @@
                             </tr>
                         </thead>
                         <tbody id="stockTableBody" class="divide-y divide-gray-200">
-                            <!-- Data akan dimuat oleh JS -->
                             <tr><td colspan="4" class="px-6 py-12 text-center text-gray-500">Memuat data stok...</td></tr>
                         </tbody>
                     </table>
@@ -111,7 +105,6 @@
             </div>
         </div>
 
-        <!-- Incoming Items Tab -->
         <div id="incomingContent" class="tab-content hidden">
             <div class="bg-white rounded-2xl shadow-lg border border-gray-100">
                 <div class="p-6 border-b border-gray-200">
@@ -168,7 +161,6 @@
             </div>
         </div>
 
-        <!-- Outgoing Items Tab -->
         <div id="outgoingContent" class="tab-content hidden">
             <div class="bg-white rounded-2xl shadow-lg border border-gray-100">
                 <div class="p-6 border-b border-gray-200">
@@ -204,7 +196,6 @@
             </div>
         </div>
         
-        <!-- Return Items Tab -->
         <div id="returnContent" class="tab-content hidden">
             <div class="bg-white rounded-2xl shadow-lg border border-gray-100">
                 <div class="p-6 border-b border-gray-200">
@@ -214,16 +205,12 @@
                 <div class="p-6">
                     <div id="borrowedItemsList" class="space-y-4">
                         <p class="text-center text-gray-500 py-4">Memuat data barang yang dipinjam...</p>
-                        <!-- Data barang pinjaman akan dimuat di sini -->
-                    </div>
+                        </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modals (Pop-up) -->
-
-    <!-- Modal 1: Stock Detail Modal -->
     <div id="stockDetailModal" class="fixed inset-0 bg-black bg-opacity-50 opacity-0 pointer-events-none flex items-center justify-center z-50 transition-opacity duration-300">
         <div class="modal-content bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 p-6 transform scale-95">
             <div class="flex justify-between items-center border-b pb-3 mb-4">
@@ -233,13 +220,11 @@
                 </button>
             </div>
             <div id="stockDetailContent" class="max-h-96 overflow-y-auto space-y-4">
-                <!-- Detail Item Akumulasi akan dimuat di sini -->
                 <p>Memuat...</p>
             </div>
         </div>
     </div>
 
-    <!-- Modal 2: Outgoing Confirmation Modal -->
     <div id="outgoingConfirmationModal" class="fixed inset-0 bg-black bg-opacity-50 opacity-0 pointer-events-none flex items-center justify-center z-50 transition-opacity duration-300">
         <div class="modal-content bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6 transform scale-95">
             <div class="flex justify-between items-center border-b pb-3 mb-4">
@@ -249,15 +234,13 @@
                 </button>
             </div>
             <div id="outgoingConfirmationContent" class="space-y-4">
-                <!-- Konten akan dimuat oleh JS -->
-            </div>
+                </div>
             <div class="mt-6 flex justify-end">
                 <button onclick="closeModal('outgoingConfirmationModal')" class="bg-blue-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-blue-700">Tutup</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal 3: Return Detail Modal -->
     <div id="returnDetailModal" class="fixed inset-0 bg-black bg-opacity-50 opacity-0 pointer-events-none flex items-center justify-center z-50 transition-opacity duration-300">
         <div class="modal-content bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6 transform scale-95">
             <div class="flex justify-between items-center border-b pb-3 mb-4">
@@ -267,16 +250,13 @@
                 </button>
             </div>
             <div id="returnDetailContent" class="space-y-4">
-                <!-- Konten akan dimuat oleh JS -->
-            </div>
+                </div>
         </div>
     </div>
 
 
-    <!-- Success/Error Messages -->
     <div id="messageContainer" class="fixed top-4 right-4 z-50"></div>
 
-    <!-- Footer -->
     <footer class="bg-gradient-to-r from-gray-800 to-gray-900 text-white mt-16">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div class="text-center">
@@ -292,15 +272,24 @@
         // ===========================================
         const SUPABASE_URL = 'https://ixbujhmqvbmyihvocfmw.supabase.co'; 
         
-        // !!! LAKUKAN KOREKSI KRITIS: GANTI dengan kunci Anonim Anda !!!
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4YnVqaG1xdmJteWlodm9jZm13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEwMDg4MTMsImV4cCI6MjA3NjU4NDgxM30.Jja-9XyFfiOYKK9-E2rtosSm4Dp315PR0zTOmXFaFYw' ; 
+        // Kunci Anonim yang sudah dikoreksi dan dimasukkan
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4YnVqaG1xdmJteWlodm9jZm13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEwMDg4MTMsImV4cCI6MjA3NjU4NDgxM30.Jja-9XyFfiOYKK9-E2rtosSm4Dp315PR0zTOmXFaFYw'; 
         
-        const supabase = SUPABASE_URL && SUPABASE_ANON_KEY && SUPABASE_ANON_KEY !== 'YOUR_SUPABASE_ANON_KEY_HERE'
-            ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-            : null;
+        let supabase = null;
+        
+        // Perbaikan Inisialisasi: Membuat objek Supabase langsung
+        try {
+            if (SUPABASE_ANON_KEY && SUPABASE_URL) {
+                // Objek 'supabase' global berasal dari CDN yang dimuat di <head>
+                supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            }
+        } catch (e) {
+            console.error("Error creating Supabase client:", e);
+        }
 
         if (!supabase) {
-            console.error("Supabase client not initialized. Please set SUPABASE_URL and SUPABASE_ANON_KEY correctly.");
+            console.error("Supabase client not initialized. Please check your keys and URL.");
+            showMessage('❌ Koneksi database gagal. Cek konsol untuk detail.', 'error');
         }
 
         // Variabel global untuk cache data
@@ -413,6 +402,8 @@
          * Menambahkan item masuk ke Supabase
          */
         async function addIncomingItemDB(item) {
+            if (!supabase) throw new Error("Supabase is not initialized.");
+            
             const newItem = {
                 name: item.name,
                 category: item.category,
@@ -439,6 +430,8 @@
          * Menambahkan item keluar ke Supabase
          */
         async function addOutgoingItemDB(item) {
+            if (!supabase) throw new Error("Supabase is not initialized.");
+            
             const newItem = {
                 name: item.name,
                 category: item.category,
@@ -464,6 +457,8 @@
          * Memperbarui status barang keluar menjadi 'returned' di Supabase
          */
         async function returnItemInDB(outgoingId) {
+            if (!supabase) throw new Error("Supabase is not initialized.");
+            
             const { error } = await supabase
                 .from('outgoing_items')
                 .update({ returned: true, "returnDate": new Date().toISOString() }) 
@@ -806,8 +801,72 @@
                 showMessage('❌ Gagal mengekspor data ke Excel', 'error');
             }
         }
+        
+        // --- EVENT LISTENERS ---
+        
+        // Form Barang Masuk
+        document.getElementById('incomingForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            
+            const item = {
+                name: form.incomingItemName.value,
+                category: form.incomingCategory.value,
+                quantity: form.incomingQuantity.value,
+                room: form.incomingRoom.value,
+                rackCode: form.incomingRackCode.value,
+                description: form.incomingDescription.value,
+                condition: form.incomingCondition.value,
+                date: form.incomingDate.value,
+            };
+
+            try {
+                const rackCode = await addIncomingItemDB(item);
+                showMessage(`✅ Barang masuk '${item.name}' berhasil disimpan ke rak ${rackCode}!`);
+                form.reset();
+            } catch (error) {
+                console.error('Incoming item submission failed:', error);
+                showMessage('❌ Gagal menyimpan Barang Masuk: ' + error.message, 'error');
+            }
+        });
+        
+        // Form Barang Keluar
+        document.getElementById('outgoingForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const selectedKey = form.outgoingItemSelect.value;
+            const itemQuantity = parseInt(form.outgoingQuantity.value, 10);
+            const availableStock = aggregatedStock[selectedKey] ? aggregatedStock[selectedKey].totalQuantity : 0;
+
+            if (itemQuantity > availableStock) {
+                showMessage('⚠️ Gagal: Jumlah keluar melebihi stok yang tersedia.', 'error');
+                return;
+            }
+            
+            const [name, category] = selectedKey.split('|');
+            
+            const item = {
+                name: name,
+                category: category,
+                quantity: itemQuantity,
+                user: form.outgoingUser.value,
+                date: form.outgoingDate.value,
+            };
+
+            try {
+                await addOutgoingItemDB(item);
+                showMessage(`✅ Barang keluar '${item.name}' (${item.quantity} unit) berhasil dicatat!`);
+                form.reset();
+                updateOutgoingSelect(); // Refresh dropdown
+            } catch (error) {
+                console.error('Outgoing item submission failed:', error);
+                showMessage('❌ Gagal mencatat Barang Keluar: ' + error.message, 'error');
+            }
+        });
+        
+        // --- INITIAL LOAD ---
+        fetchData();
+        showTab('stock');
     </script>
 </body>
-
-
-
+</html>
