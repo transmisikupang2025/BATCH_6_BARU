@@ -293,7 +293,7 @@
         const SUPABASE_URL = 'https://ixbujhmqvbmyihvocfmw.supabase.co'; 
         
         // !!! LAKUKAN KOREKSI KRITIS: GANTI dengan kunci Anonim Anda !!!
-        const SUPABASE_ANON_KEY = process.env.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4YnVqaG1xdmJteWlodm9jZm13Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MTAwODgxMywiZXhwIjoyMDc2NTg0ODEzfQ.z7i4R29pLBJbzxRfy4DoEI5MD6HIF_g1xq9T3zV0ow8 ; 
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4YnVqaG1xdmJteWlodm9jZm13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEwMDg4MTMsImV4cCI6MjA3NjU4NDgxM30.Jja-9XyFfiOYKK9-E2rtosSm4Dp315PR0zTOmXFaFYw' ; 
         
         const supabase = SUPABASE_URL && SUPABASE_ANON_KEY && SUPABASE_ANON_KEY !== 'YOUR_SUPABASE_ANON_KEY_HERE'
             ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
@@ -808,5 +808,6 @@
         }
     </script>
 </body>
+
 
 
