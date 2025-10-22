@@ -864,9 +864,22 @@
         // --- INITIAL LOAD ---
         fetchData();
         showTab('stock');
+ // --------- command ---------- //
+      // Di bagian paling akhir:
+  window.showTab = showTab;
+  window.showMessage = showMessage;
+  window.openModal = openModal;
+  window.closeModal = closeModal;
+  window.showStockDetail = showStockDetail;
+  window.showReturnDetail = showReturnDetail;
+  window.confirmReturn = confirmReturn;
+  window.exportToExcel = exportToExcel;
+
+    
     </script>
 </body>
 </html>
+
 
 
 
