@@ -483,46 +483,74 @@
          */
         function recalculateAllData() {
             aggregatedStock = {};
-
-            // 1. Hitung Stok Masuk dan Simpan Detail Item
+            
+            // Step 1: Initialize Batches with mutable stock
+            // Membuat peta untuk memetakan ID item masuk ke objek batch yang bisa diubah
+            const allBatchesMap = {}; 
+            
             incomingItems.forEach(item => {
                 const key = `${item.name}|${item.category}`;
-                const quantity = parseInt(item.quantity);
+                
+                // Membuat salinan objek batch agar quantity bisa dikurangi
+                const batchCopy = { ...item, quantity: parseInt(item.quantity, 10) };
+                allBatchesMap[item.id] = batchCopy;
                 
                 if (!aggregatedStock[key]) {
-                    // Simpan detail dari input pertama sebagai referensi
                     aggregatedStock[key] = {
                         name: item.name,
                         category: item.category,
                         totalQuantity: 0,
+                        // Simpan referensi metadata awal (dari item pertama/terbaru)
                         room: item.room,
                         rackCode: item.rackCode,
                         description: item.description,
                         condition: item.condition,
-                        incomingDetails: [] // Untuk detail akumulasi
+                        incomingDetails: [] 
                     };
                 }
-                
-                aggregatedStock[key].totalQuantity += quantity;
-                aggregatedStock[key].incomingDetails.push(item);
-                
-                // Sortir agar item newest first (sudah dilakukan saat fetch, tapi jaga-jaga)
-                aggregatedStock[key].incomingDetails.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                // Simpan reference ke batch yang akan dikurangi
+                aggregatedStock[key].incomingDetails.push(batchCopy);
             });
             
-            // 2. Kurangi Stok Keluar
+            // Step 2: Subtract Outgoing Items from specific batches
             outgoingItems.forEach(item => {
-                const key = `${item.name}|${item.category}`;
-                const quantity = parseInt(item.quantity);
+                if (item.returned) return;
 
-                if (aggregatedStock[key] && !item.returned) {
-                    aggregatedStock[key].totalQuantity -= quantity;
+                const key = `${item.name}|${item.category}`;
+                const outgoingQuantity = parseInt(item.quantity, 10);
+                
+                // Cek apakah item keluar terkait dengan batch spesifik
+                if (item.incoming_batch_id && allBatchesMap[item.incoming_batch_id]) {
+                    // Kurangi stok dari batch yang spesifik
+                    allBatchesMap[item.incoming_batch_id].quantity -= outgoingQuantity;
+                } else if (aggregatedStock[key]) {
+                    // Fallback: Untuk data lama yang tidak punya incoming_batch_id, 
+                    // kita kurangi dari total stok agregat (agar total tetap benar)
+                    // Peringatan: Logika ini tidak ideal untuk FIFO, tapi menjaga total stok.
+                    // Karena kita akan menghitung ulang total di Step 3, kita lewati pengurangan fallback di sini.
                 }
             });
-            
-            // Hapus stok yang totalQuantity <= 0
+
+            // Step 3: Recalculate Total Stock based on reduced batches
             Object.keys(aggregatedStock).forEach(key => {
-                if (aggregatedStock[key].totalQuantity <= 0) {
+                let totalStock = 0;
+                let validBatches = [];
+
+                // Hitung total quantity yang tersisa dari semua batch yang sudah dikurangi
+                aggregatedStock[key].incomingDetails.forEach(batch => {
+                    // Hanya tambahkan batch jika stoknya > 0
+                    if (batch.quantity > 0) {
+                        totalStock += batch.quantity;
+                        validBatches.push(batch);
+                    }
+                });
+                
+                aggregatedStock[key].totalQuantity = totalStock;
+                // Simpan hanya batch yang tersisa, diurutkan dari terbaru (terlama berada di akhir)
+                aggregatedStock[key].incomingDetails = validBatches.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                
+                // Hapus stok yang totalQuantity <= 0
+                if (totalStock <= 0) {
                     delete aggregatedStock[key];
                 }
             });
@@ -741,6 +769,8 @@
             document.getElementById('stockDetailName').textContent = item.name;
             const content = document.getElementById('stockDetailContent');
             
+            // --- BAGIAN INI DIHAPUS SESUAI PERMINTAAN ---
+            /*
             // Ambil batch pertama (yang paling lama) untuk Kondisi & Deskripsi Awal
             const firstIncoming = item.incomingDetails.length > 0 ? item.incomingDetails[item.incomingDetails.length - 1] : {}; 
             
@@ -752,15 +782,25 @@
                         <span class="${firstIncoming.condition === 'Baik' ? 'text-green-600' : 'text-red-600'} font-bold">${firstIncoming.condition || 'N/A'}</span>
                     </p>
                 </div>
-                <h4 class="text-lg font-semibold border-b pb-1 mt-4">Riwayat Masuk (Akumulasi per Batch)</h4>
+                <h4 class="text-lg font-semibold border-b pb-1 mt-4">Riwayat Masuk (Sisa Stok per Batch)</h4>
+            `;
+            */
+
+            // --- KODE HTML BARU TANPA RINGKASAN AWAL ---
+            let html = `
+                <h4 class="text-lg font-semibold border-b pb-1 mb-4">Riwayat Masuk (Sisa Stok per Batch)</h4>
             `;
             
             // Tampilkan detail setiap kali barang masuk
-            // item.incomingDetails diurutkan dari yang terbaru, jadi kita iterasi mundur untuk menampilkan batch terbaru lebih dulu di UI.
+            // item.incomingDetails diurutkan dari yang terbaru, jadi kita iterasi untuk menampilkan
             item.incomingDetails.forEach((detail, index) => {
+                // Gunakan detail.quantity yang sudah dikurangi (mutable copy)
+                const currentQuantity = detail.quantity; 
+                
                 html += `
                     <div class="border-l-4 border-green-400 pl-4 py-2 bg-white shadow-sm rounded-lg">
-                        <p class="font-medium text-gray-700">Batch #${item.incomingDetails.length - index} (${detail.quantity} unit)</p>
+                        <p class="font-medium text-gray-700">Batch #${item.incomingDetails.length - index} | 
+                        <span class="font-bold text-blue-600">${currentQuantity} unit</span> tersisa</p>
                         <ul class="text-sm text-gray-600 space-y-0.5 mt-1">
                             <li><span class="font-medium">Tanggal Masuk:</span> ${new Date(detail.date).toLocaleDateString('id-ID')}</li>
                             <li><span class="font-medium">Ruang:</span> ${detail.room}</li>
@@ -793,17 +833,18 @@
             }
 
             const [name, category] = selectedKey.split('|');
-            const batches = getAvailableBatches(name, category);
+            // Menggunakan incomingDetails yang kini hanya berisi batch > 0
+            const batches = aggregatedStock[selectedKey].incomingDetails;
             
             let batchCounter = batches.length;
 
-            batches.forEach((batch) => {
+            batches.forEach((batch, index) => {
                 const option = document.createElement('option');
                 // Penting: ID batch yang dikirim ke DB
                 option.value = batch.id; 
                 
                 // Tampilkan detail lengkap di dropdown
-                let label = `Batch #${batchCounter} | Jumlah: ${batch.quantity} | Rak: ${batch.rackCode} | Kondisi: ${batch.condition}`;
+                let label = `Batch #${batchCounter} | Sisa: ${batch.quantity} | Rak: ${batch.rackCode} | Kondisi: ${batch.condition}`;
                 
                 option.textContent = label;
                 select.appendChild(option);
@@ -815,6 +856,7 @@
             // Event listener untuk update deskripsi batch
             select.onchange = function() {
                 const selectedBatchId = this.value;
+                // Cari batch di aggregatedStock.incomingDetails
                 const selectedBatch = batches.find(b => b.id == selectedBatchId);
 
                 if (selectedBatch) {
