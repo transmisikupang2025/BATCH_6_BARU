@@ -178,6 +178,18 @@
                                 <option value="">Pilih barang (Stok tersedia: 0)</option>
                             </select>
                         </div>
+                        
+                        <!-- BARU: Dropdown Pemilihan Batch -->
+                        <div id="batchSelectContainer" class="hidden">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Pilih Detail Batch</label>
+                            <select id="outgoingBatchSelect" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500" required>
+                                <option value="">Pilih batch spesifik</option>
+                            </select>
+                            <p class="text-xs text-gray-500 mt-1">
+                                <span class="font-semibold">Detail Batch:</span> <span id="batchDetailInfo">Pilih batch untuk melihat deskripsi lengkap.</span>
+                            </p>
+                        </div>
+
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Jumlah Barang Keluar</label>
                             <input type="number" id="outgoingQuantity" min="1" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500" placeholder="Masukkan jumlah" required>
@@ -242,6 +254,7 @@
             <div id="outgoingConfirmationContent" class="space-y-4">
                 </div>
             <div class="mt-6 flex justify-end">
+                <!-- Tombol ini hanya menutup modal, submit dilakukan lewat form -->
                 <button onclick="closeModal('outgoingConfirmationModal')" class="bg-blue-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-blue-700">Tutup</button>
             </div>
         </div>
@@ -283,6 +296,35 @@
   const SUPABASE_URL = 'https://ixbujhmqvbmyihvocfmw.supabase.co'; // GANTI INI
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4YnVqaG1xdmJteWlodm9jZm13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEwMDg4MTMsImV4cCI6MjA3NjU4NDgxM30.Jja-9XyFfiOYKK9-E2rtosSm4Dp315PR0zTOmXFaFYw'; // GANTI INI
   const NOTIFICATION_EMAIL = "transmisikupang2025@gmail.com";
+
+  /* ========================================================================
+    !!! PERHATIAN !!! PENTING UNTUK MENGATASI ERROR SKEMA DATABASE
+    ========================================================================
+    
+    Anda mendapatkan error: Could not find the 'incoming_batch_id' column of 'outgoing_items'.
+    
+    Silakan jalankan kode SQL berikut di SQL Editor Supabase Anda
+    untuk menambahkan kolom yang diperlukan:
+
+    --- SQL UNTUK MENAMBAH KOLOM YANG HILANG ---
+    DO $$
+    BEGIN
+        IF NOT EXISTS (
+            SELECT 1 
+            FROM information_schema.columns 
+            WHERE table_name='outgoing_items' AND column_name='incoming_batch_id'
+        ) THEN
+            -- Menggunakan tipe bigint karena ID di Supabase adalah bigserial (bigint)
+            ALTER TABLE public.outgoing_items ADD COLUMN "incoming_batch_id" bigint;
+        END IF;
+    END$$;
+    ---------------------------------------------
+
+    Setelah menjalankan SQL di atas, error Anda akan hilang dan fitur submit akan berfungsi.
+    
+    ========================================================================
+  */
+
 
   let supabase = null;
   try {
@@ -347,7 +389,6 @@
         
         /**
          * BARU: Mencari metadata (Lokasi/Kondisi/Deskripsi) dari item masuk awal.
-         * Kami mencari entri tertua (terakhir dalam array yang diurutkan descending)
          */
         function getItemMetadata(name, category) {
             // Karena incomingItems diurutkan dari terbaru (descending), 
@@ -367,6 +408,35 @@
                 description: initialEntry.description || 'N/A',
                 room: initialEntry.room || 'N/A',
             };
+        }
+        
+        /**
+         * BARU: Mendapatkan detail batch yang masih memiliki stok > 0 (sisa stok pada batch tersebut)
+         * CATATAN: Karena kita tidak mencatat outgoing per batch di DB saat ini, 
+         * fungsi ini hanya mengembalikan semua batch yang cocok tanpa mempertimbangkan pengurangan stok per batch.
+         */
+        function getAvailableBatches(name, category) {
+            if (!aggregatedStock[`${name}|${category}`]) return [];
+
+            // Ambil semua detail masuk (batch) untuk item ini
+            const allBatches = aggregatedStock[`${name}|${category}`].incomingDetails;
+
+            // Di sini, kita hanya mengembalikan semua batch yang masuk. 
+            // Untuk FIFO yang ketat, kita perlu logika pengurangan stok global yang lebih kompleks
+            // yang melacak setiap item keluar terhadap ID batch masuk.
+            
+            // Untuk tujuan display spesifik, kita anggap semua batch yang ada di riwayat masuk valid untuk dipilih
+            return allBatches.map((batch, index) => ({
+                id: batch.id,
+                batchKey: batch.id || `batch-${batch.timestamp}-${index}`, // Gunakan ID unik
+                quantity: batch.quantity,
+                date: batch.date,
+                rackCode: batch.rackCode,
+                condition: batch.condition,
+                description: batch.description,
+                room: batch.room,
+                isNewest: index === 0 // Batch terbaru
+            }));
         }
 
 
@@ -390,9 +460,10 @@
                 incomingItems = incomingData || [];
 
                 // Fetch Outgoing Items
+                // Perbaikan: Hanya select '*' untuk menghindari error kolom missing saat fetch.
                 const { data: outgoingData, error: outgoingError } = await supabase
                     .from('outgoing_items')
-                    .select('*')
+                    .select('*') // Mengandalkan '*' untuk mengambil semua kolom yang tersedia
                     .order('timestamp', { ascending: false });
 
                 if (outgoingError) throw outgoingError;
@@ -490,6 +561,7 @@
         async function addOutgoingItemDB(item) {
             if (!supabase) throw new Error("Supabase is not initialized.");
             
+            // Tambahkan incoming_batch_id ke payload (BARU)
             const newItem = {
                 name: item.name,
                 category: item.category,
@@ -497,8 +569,10 @@
                 penerima: item.user, 
                 date: item.date,
                 returned: false,
+                incoming_batch_id: item.batchId // BARU: ID Batch yang diambil
             };
 
+            // Error PGRST204 terjadi di sini karena DB tidak memiliki kolom incoming_batch_id
             const { error } = await supabase
                 .from('outgoing_items')
                 .insert([newItem]);
@@ -701,6 +775,60 @@
             content.innerHTML = html;
             openModal('stockDetailModal');
         }
+        
+        /**
+         * BARU: Mengisi dropdown Batch berdasarkan item yang dipilih
+         */
+        function updateBatchSelect(selectedKey) {
+            const container = document.getElementById('batchSelectContainer');
+            const select = document.getElementById('outgoingBatchSelect');
+            const detailInfo = document.getElementById('batchDetailInfo');
+
+            select.innerHTML = '<option value="">Pilih batch spesifik</option>';
+            detailInfo.textContent = 'Pilih batch untuk melihat deskripsi lengkap.';
+            
+            if (!selectedKey || !aggregatedStock[selectedKey]) {
+                container.classList.add('hidden');
+                return;
+            }
+
+            const [name, category] = selectedKey.split('|');
+            const batches = getAvailableBatches(name, category);
+            
+            let batchCounter = batches.length;
+
+            batches.forEach((batch) => {
+                const option = document.createElement('option');
+                // Penting: ID batch yang dikirim ke DB
+                option.value = batch.id; 
+                
+                // Tampilkan detail lengkap di dropdown
+                let label = `Batch #${batchCounter} | Jumlah: ${batch.quantity} | Rak: ${batch.rackCode} | Kondisi: ${batch.condition}`;
+                
+                option.textContent = label;
+                select.appendChild(option);
+                batchCounter--;
+            });
+
+            container.classList.remove('hidden');
+            
+            // Event listener untuk update deskripsi batch
+            select.onchange = function() {
+                const selectedBatchId = this.value;
+                const selectedBatch = batches.find(b => b.id == selectedBatchId);
+
+                if (selectedBatch) {
+                    detailInfo.innerHTML = `
+                        Rak: ${selectedBatch.rackCode} (${selectedBatch.room}) | 
+                        Kondisi: <span class="font-bold text-${selectedBatch.condition === 'Baik' ? 'green-600' : 'red-600'}">${selectedBatch.condition}</span> | 
+                        Deskripsi: ${selectedBatch.description || 'Tidak ada deskripsi.'}
+                    `;
+                } else {
+                    detailInfo.textContent = 'Pilih batch untuk melihat deskripsi lengkap.';
+                }
+            };
+        }
+
 
         /**
          * Mengisi dropdown Barang Keluar (Item 2)
@@ -708,7 +836,7 @@
         function updateOutgoingSelect() {
             const select = document.getElementById('outgoingItemSelect');
             // Urutkan A-Z berdasarkan nama
-            const availableItems = Object.values(aggregatedStock).filter(item => item.totalQuantity > 0).sort((a, b) => a.name.localeCompare(b.name));
+            const availableItems = Object.values(aggregatedStock).sort((a, b) => a.name.localeCompare(b.name));
             
             select.innerHTML = '<option value="">Pilih barang (Stok tersedia: 0)</option>';
             
@@ -727,6 +855,9 @@
                 const quantityInput = document.getElementById('outgoingQuantity');
                 const confirmationContent = document.getElementById('outgoingConfirmationContent');
                 
+                // BARU: Panggil update Batch Selection
+                updateBatchSelect(selectedKey);
+                
                 if (selectedKey && aggregatedStock[selectedKey]) {
                     const item = aggregatedStock[selectedKey];
                     availableStockSpan.textContent = item.totalQuantity;
@@ -734,27 +865,31 @@
                     quantityInput.value = '';
                     
                     const [name, category] = selectedKey.split('|');
-                    // GANTI: Ambil metadata dari fungsi baru, bukan dari aggregatedStock yang mungkin terhapus.
                     const metadataRef = getItemMetadata(name, category) || item; 
 
-                    // Deskripsi barang (Item 2)
+                    // Deskripsi barang (Item 2) - HANYA DESKRIPSI UTAMA
                     confirmationContent.innerHTML = `
-                        <p class="text-gray-700">Barang yang akan diambil:</p>
+                        <p class="text-gray-700 font-semibold">Detail Stok Utama:</p>
                         <div class="p-3 bg-blue-50 rounded-lg space-y-1">
                             <p><span class="font-semibold">Nama:</span> ${item.name}</p>
                             <p><span class="font-semibold">Stok Tersedia:</span> ${item.totalQuantity}</p>
-                            <p><span class="font-semibold">Kondisi Saat Masuk:</span> <span class="text-${metadataRef.condition === 'Baik' ? 'green' : 'red'}-600 font-bold">${metadataRef.condition || 'N/A'}</span></p>
-                            <p><span class="font-semibold">Lokasi Rak:</span> ${metadataRef.rackCode || 'N/A'} (${metadataRef.room || 'N/A'})</p>
-                            <p><span class="font-semibold">Deskripsi:</span> ${metadataRef.description || 'Tidak ada deskripsi.'}</p>
+                            <p><span class="font-semibold">Kondisi Awal:</span> <span class="text-${metadataRef.condition === 'Baik' ? 'green' : 'red'}-600 font-bold">${metadataRef.condition || 'N/A'}</span></p>
+                            <p><span class="font-semibold">Lokasi Rak Awal:</span> ${metadataRef.rackCode || 'N/A'} (${metadataRef.room || 'N/A'})</p>
+                            <p><span class="font-semibold">Deskripsi Awal:</span> ${metadataRef.description || 'Tidak ada deskripsi.'}</p>
                         </div>
+                        <p class="text-sm text-red-600 mt-2">Pastikan Anda memilih Batch/Detail Input di atas!</p>
                     `;
+                    openModal('outgoingConfirmationModal'); // Tampilkan modal setelah pemilihan utama
                 } else {
                     availableStockSpan.textContent = '0';
                     quantityInput.max = '';
                     quantityInput.value = '';
                     confirmationContent.innerHTML = `<p class="text-center text-gray-500">Pilih barang untuk melihat detail.</p>`;
+                    closeModal('outgoingConfirmationModal');
                 }
             };
+            // Panggil onchange secara manual jika sudah ada nilai yang dipilih saat load tab
+            if(select.value) select.onchange(); 
         }
         
         /**
@@ -792,7 +927,15 @@
             if (!outgoingItem) return;
 
             // GANTI: Gunakan fungsi metadata khusus
-            const metadataRef = getItemMetadata(outgoingItem.name, outgoingItem.category); 
+            // Jika outgoingItem memiliki incoming_batch_id, cari metadata dari batch spesifik itu
+            let metadataRef = null;
+            if (outgoingItem.incoming_batch_id) {
+                metadataRef = incomingItems.find(i => i.id == outgoingItem.incoming_batch_id);
+            }
+            // Jika tidak ada ID batch (untuk entri lama) atau tidak ditemukan, fallback ke metadata awal
+            if (!metadataRef) {
+                metadataRef = getItemMetadata(outgoingItem.name, outgoingItem.category);
+            }
             
             const content = document.getElementById('returnDetailContent');
             
@@ -912,6 +1055,7 @@
                     'Tanggal Kembali': item.returnDate ? new Date(item.returnDate).toLocaleDateString('id-ID') : 'N/A',
                     'Kondisi Kembali': item.returnCondition || 'N/A',
                     'Link Bukti Foto': item.returnPhotoUrl || 'N/A', 
+                    'ID Batch Masuk': item.incoming_batch_id || 'N/A', // Tambah ID Batch
                 }));
 
                 // 4. Ringkasan
@@ -982,8 +1126,14 @@
             e.preventDefault();
             const form = e.target;
             const selectedKey = form.outgoingItemSelect.value;
+            const selectedBatchId = form.outgoingBatchSelect.value; // BARU: Ambil ID Batch
             const itemQuantity = parseInt(form.outgoingQuantity.value, 10);
             const availableStock = aggregatedStock[selectedKey] ? aggregatedStock[selectedKey].totalQuantity : 0;
+
+            if (!selectedBatchId) {
+                showMessage('⚠️ Gagal: Anda harus memilih Batch/Detail Input spesifik dari mana barang akan diambil.', 'error');
+                return;
+            }
 
             if (itemQuantity > availableStock) {
                 showMessage('⚠️ Gagal: Jumlah keluar melebihi stok yang tersedia.', 'error');
@@ -998,6 +1148,7 @@
                 quantity: itemQuantity,
                 user: form.outgoingUser.value,
                 date: form.outgoingDate.value,
+                batchId: selectedBatchId, // BARU: Sertakan ID Batch
             };
 
             try {
@@ -1005,13 +1156,13 @@
                 
                 // PANGGILAN STUB: Notifikasi Email Barang Keluar
                 const emailSubject = `🚨 Barang Keluar: ${item.name} (${item.quantity} unit) oleh ${item.user}`;
-                const emailBody = `Barang **${item.name}** (${item.category}) sebanyak **${item.quantity} unit** telah diambil oleh **${item.user}** pada tanggal ${item.date}.`;
+                const emailBody = `Barang **${item.name}** (${item.category}) sebanyak **${item.quantity} unit** telah diambil oleh **${item.user}** pada tanggal ${item.date} dari Batch ID: ${selectedBatchId}.`;
                 sendEmailNotification(emailSubject, emailBody);
 
                 showMessage(`✅ Barang keluar '${item.name}' (${item.quantity} unit) berhasil dicatat!`);
                 form.reset();
-                // Tampilkan detail barang yang diambil (seperti pop up)
-                openModal('outgoingConfirmationModal'); 
+                updateOutgoingSelect(); // Panggil ini untuk membersihkan dropdown batch
+                closeModal('outgoingConfirmationModal'); 
 
             } catch (error) {
                 console.error('Outgoing item submission failed:', error);
