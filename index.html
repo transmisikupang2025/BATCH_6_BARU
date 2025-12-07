@@ -15,7 +15,7 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .slide-up { animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .modal-content { transition: all 0.3s ease-out; transform: scale(0.95); }
+        .modal-content { transition: all 0.3s ease-out; }
         .is-open { opacity: 1; pointer-events: auto; }
         .is-open .modal-content { transform: scale(1); }
     </style>
@@ -63,7 +63,6 @@
             </nav>
         </div>
 
-        <!-- 4. Menu Stok Terkini -->
         <div id="stockContent" class="tab-content">
             <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 mb-8">
                 <h3 class="text-xl font-semibold text-gray-900 mb-4">Ringkasan Stok Total</h3>
@@ -106,7 +105,6 @@
             </div>
         </div>
 
-        <!-- 1. Menu Input Barang Masuk -->
         <div id="incomingContent" class="tab-content hidden">
             <div class="bg-white rounded-2xl shadow-lg border border-gray-100">
                 <div class="p-6 border-b border-gray-200">
@@ -163,7 +161,6 @@
             </div>
         </div>
 
-        <!-- 2. Menu Barang Keluar -->
         <div id="outgoingContent" class="tab-content hidden">
             <div class="bg-white rounded-2xl shadow-lg border border-gray-100">
                 <div class="p-6 border-b border-gray-200">
@@ -178,18 +175,6 @@
                                 <option value="">Pilih barang (Stok tersedia: 0)</option>
                             </select>
                         </div>
-                        
-                        <!-- BARU: Dropdown Pemilihan Batch -->
-                        <div id="batchSelectContainer" class="hidden">
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Pilih Detail Batch</label>
-                            <select id="outgoingBatchSelect" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500" required>
-                                <option value="">Pilih batch spesifik</option>
-                            </select>
-                            <p class="text-xs text-gray-500 mt-1">
-                                <span class="font-semibold">Detail Batch:</span> <span id="batchDetailInfo">Pilih batch untuk melihat deskripsi lengkap.</span>
-                            </p>
-                        </div>
-
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Jumlah Barang Keluar</label>
                             <input type="number" id="outgoingQuantity" min="1" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500" placeholder="Masukkan jumlah" required>
@@ -211,7 +196,6 @@
             </div>
         </div>
         
-        <!-- 3. Menu Pengembalian Barang -->
         <div id="returnContent" class="tab-content hidden">
             <div class="bg-white rounded-2xl shadow-lg border border-gray-100">
                 <div class="p-6 border-b border-gray-200">
@@ -227,9 +211,8 @@
         </div>
     </div>
 
-    <!-- Modal Detail Stok (Stok Terkini) -->
     <div id="stockDetailModal" class="fixed inset-0 bg-black bg-opacity-50 opacity-0 pointer-events-none flex items-center justify-center z-50 transition-opacity duration-300">
-        <div class="modal-content bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 p-6">
+        <div class="modal-content bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 p-6 transform scale-95">
             <div class="flex justify-between items-center border-b pb-3 mb-4">
                 <h3 class="text-xl font-bold text-gray-900">Detail Stok: <span id="stockDetailName" class="text-blue-600"></span></h3>
                 <button onclick="closeModal('stockDetailModal')" class="text-gray-500 hover:text-gray-900">
@@ -242,9 +225,8 @@
         </div>
     </div>
 
-    <!-- Modal Konfirmasi Barang Keluar (Item 2) -->
     <div id="outgoingConfirmationModal" class="fixed inset-0 bg-black bg-opacity-50 opacity-0 pointer-events-none flex items-center justify-center z-50 transition-opacity duration-300">
-        <div class="modal-content bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6">
+        <div class="modal-content bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6 transform scale-95">
             <div class="flex justify-between items-center border-b pb-3 mb-4">
                 <h3 class="text-xl font-bold text-gray-900">Konfirmasi Pengambilan Barang</h3>
                 <button onclick="closeModal('outgoingConfirmationModal')" class="text-gray-500 hover:text-gray-900">
@@ -254,15 +236,13 @@
             <div id="outgoingConfirmationContent" class="space-y-4">
                 </div>
             <div class="mt-6 flex justify-end">
-                <!-- Tombol ini hanya menutup modal, submit dilakukan lewat form -->
                 <button onclick="closeModal('outgoingConfirmationModal')" class="bg-blue-600 text-white px-4 py-2 rounded-xl font-semibold hover:bg-blue-700">Tutup</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal Detail Pengembalian (Item 3) -->
     <div id="returnDetailModal" class="fixed inset-0 bg-black bg-opacity-50 opacity-0 pointer-events-none flex items-center justify-center z-50 transition-opacity duration-300">
-        <div class="modal-content bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6">
+        <div class="modal-content bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6 transform scale-95">
             <div class="flex justify-between items-center border-b pb-3 mb-4">
                 <h3 class="text-xl font-bold text-gray-900">Detail Pengembalian</h3>
                 <button onclick="closeModal('returnDetailModal')" class="text-gray-500 hover:text-gray-900">
@@ -281,7 +261,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div class="text-center">
                 <p class="text-lg font-semibold text-blue-300 mb-2">Gudang Ceria - Cekatan, Rapi, Indah, dan Aman</p>
-                <p class="text-gray-400 text-sm">Inventory Management System</p>
+                <p class="text-gray-400 text-sm">Inventory Management System oleh Aditya Condro Bagaskoro</p>
             </div>
         </div>
     </footer>
@@ -289,42 +269,10 @@
 <script type="module">
   import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-  // ===========================================
-  // *** KONFIGURASI SUPABASE ***
-  // GANTI DENGAN KUNCI DAN URL SUPABASE ANDA
-  // ===========================================
-  const SUPABASE_URL = 'https://ixbujhmqvbmyihvocfmw.supabase.co'; // GANTI INI
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4YnVqaG1xdmJteWlodm9jZm13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEwMDg4MTMsImV4cCI6MjA3NjU4NDgxM30.Jja-9XyFfiOYKK9-E2rtosSm4Dp315PR0zTOmXFaFYw'; // GANTI INI
+  const SUPABASE_URL = 'https://ixbujhmqvbmyihvocfmw.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4YnVqaG1xdmJteWlodm9jZm13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEwMDg4MTMsImV4cCI6MjA3NjU4NDgxM30.Jja-9XyFfiOYKK9-E2rtosSm4Dp315PR0zTOmXFaFYw'; // tetap hati-hati menyimpan key di client
 
-  /* ========================================================================
-    !!! PERHATIAN !!! PENTING UNTUK MENGATASI ERROR SKEMA DATABASE
-    ========================================================================
-    
-    Anda mendapatkan error: Could not find the 'incoming_batch_id' column of 'outgoing_items'.
-    
-    Silakan jalankan kode SQL berikut di SQL Editor Supabase Anda
-    untuk menambahkan kolom yang diperlukan:
-
-    --- SQL UNTUK MENAMBAH KOLOM YANG HILANG ---
-    DO $$
-    BEGIN
-        IF NOT EXISTS (
-            SELECT 1 
-            FROM information_schema.columns 
-            WHERE table_name='outgoing_items' AND column_name='incoming_batch_id'
-        ) THEN
-            -- Menggunakan tipe bigint karena ID di Supabase adalah bigserial (bigint)
-            ALTER TABLE public.outgoing_items ADD COLUMN "incoming_batch_id" bigint;
-        END IF;
-    END$$;
-    ---------------------------------------------
-
-    Setelah menjalankan SQL di atas, error Anda akan hilang dan fitur submit akan berfungsi.
-    
-    ========================================================================
-  */
-
-
+  // Inisialisasi langsung dengan fungsi yang sudah diimport
   let supabase = null;
   try {
     if (SUPABASE_URL && SUPABASE_ANON_KEY) {
@@ -345,102 +293,10 @@
         let incomingItems = []; // Semua data riwayat barang masuk
         let outgoingItems = []; // Semua data riwayat barang keluar
         let aggregatedStock = {}; // Stok dihitung per NamaBarang|Kategori
-        
-        // ===========================================
-        // FUNGSI UTILITY & EXTERNAL STUBS
-        // ===========================================
-
-        /**
-         * Mengunggah file ke Supabase Storage dan mengembalikan URL publik
-         */
-        async function uploadFile(file, bucketName = 'inventory_photos') {
-            if (!supabase) throw new Error("Supabase is not initialized.");
-            if (!file) return null;
-
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-            const filePath = `public/${fileName}`;
-
-            const { data, error } = await supabase.storage
-                .from(bucketName)
-                .upload(filePath, file);
-
-            if (error) {
-                console.error("Supabase Storage Upload Error:", error);
-                throw new Error("Gagal mengunggah file bukti fisik: " + error.message);
-            }
-
-            // Dapatkan URL publik
-            const { data: publicURLData } = supabase.storage
-                .from(bucketName)
-                .getPublicUrl(filePath);
-
-            return publicURLData.publicUrl;
-        }
-
-        /**
-         * STUB: Mengirim notifikasi ke email admin.
-         */
-        async function sendEmailNotification(subject, body) {
-            console.log(`[EMAIL STUB] Mengirim ke ${NOTIFICATION_EMAIL}. Subjek: ${subject}. Isi: ${body.substring(0, 100)}...`);
-            // Implementasi API call ke backend Anda (mis. Supabase Edge Functions) di sini
-        }
-        
-        /**
-         * BARU: Mencari metadata (Lokasi/Kondisi/Deskripsi) dari item masuk awal.
-         */
-        function getItemMetadata(name, category) {
-            // Karena incomingItems diurutkan dari terbaru (descending), 
-            // kita ambil entri terakhir yang cocok untuk mendapatkan data awal/pertama.
-            const matchedEntries = incomingItems.filter(item => 
-                item.name === name && item.category === category
-            );
-            
-            if (matchedEntries.length === 0) return null;
-            
-            // Entri terakhir dalam array matchedEntries (setelah filter) adalah yang paling tua
-            const initialEntry = matchedEntries[matchedEntries.length - 1]; 
-            
-            return {
-                rackCode: initialEntry.rackCode || 'N/A',
-                condition: initialEntry.condition || 'N/A',
-                description: initialEntry.description || 'N/A',
-                room: initialEntry.room || 'N/A',
-            };
-        }
-        
-        /**
-         * BARU: Mendapatkan detail batch yang masih memiliki stok > 0 (sisa stok pada batch tersebut)
-         * CATATAN: Karena kita tidak mencatat outgoing per batch di DB saat ini, 
-         * fungsi ini hanya mengembalikan semua batch yang cocok tanpa mempertimbangkan pengurangan stok per batch.
-         */
-        function getAvailableBatches(name, category) {
-            if (!aggregatedStock[`${name}|${category}`]) return [];
-
-            // Ambil semua detail masuk (batch) untuk item ini
-            const allBatches = aggregatedStock[`${name}|${category}`].incomingDetails;
-
-            // Di sini, kita hanya mengembalikan semua batch yang masuk. 
-            // Untuk FIFO yang ketat, kita perlu logika pengurangan stok global yang lebih kompleks
-            // yang melacak setiap item keluar terhadap ID batch masuk.
-            
-            // Untuk tujuan display spesifik, kita anggap semua batch yang ada di riwayat masuk valid untuk dipilih
-            return allBatches.map((batch, index) => ({
-                id: batch.id,
-                batchKey: batch.id || `batch-${batch.timestamp}-${index}`, // Gunakan ID unik
-                quantity: batch.quantity,
-                date: batch.date,
-                rackCode: batch.rackCode,
-                condition: batch.condition,
-                description: batch.description,
-                room: batch.room,
-                isNewest: index === 0 // Batch terbaru
-            }));
-        }
-
+        let roomCapacity = {}; // Kapasitas Ruangan
 
         // ===========================================
-        // FUNGSI UTAMA CRUD DENGAN SUPABASE
+        // 2. FUNGSI UTAMA CRUD DENGAN SUPABASE
         // ===========================================
 
         /**
@@ -458,11 +314,10 @@
                 if (incomingError) throw incomingError;
                 incomingItems = incomingData || [];
 
-                // Fetch Outgoing Items
-                // Perbaikan: Hanya select '*' untuk menghindari error kolom missing saat fetch.
+                // Fetch Outgoing Items (Mengambil kolom 'penerima')
                 const { data: outgoingData, error: outgoingError } = await supabase
                     .from('outgoing_items')
-                    .select('*') // Mengandalkan '*' untuk mengambil semua kolom yang tersedia
+                    .select('*')
                     .order('timestamp', { ascending: false });
 
                 if (outgoingError) throw outgoingError;
@@ -478,85 +333,70 @@
         }
         
         /**
-         * Menghitung ulang Aggregated Stock dari riwayat (Item 4)
+         * Menghitung ulang Aggregated Stock dan Room Capacity dari riwayat
          */
         function recalculateAllData() {
             aggregatedStock = {};
-            
-            // Step 1: Initialize Batches with mutable stock
-            // Membuat peta untuk memetakan ID item masuk ke objek batch yang bisa diubah
-            const allBatchesMap = {}; 
-            
+            roomCapacity = {};
+
+            // 1. Hitung Stok Masuk dan Simpan Detail Item
             incomingItems.forEach(item => {
                 const key = `${item.name}|${item.category}`;
-                
-                // Membuat salinan objek batch agar quantity bisa dikurangi
-                const batchCopy = { ...item, quantity: parseInt(item.quantity, 10) };
-                allBatchesMap[item.id] = batchCopy;
+                const quantity = parseInt(item.quantity);
                 
                 if (!aggregatedStock[key]) {
+                    // Hanya simpan detail pertama (ruang, rak, deskripsi, kondisi) dari batch masuk
+                    // Catatan: Jika ada item yang sama masuk ke rak berbeda, sistem akan melacak rak pertama.
                     aggregatedStock[key] = {
                         name: item.name,
                         category: item.category,
                         totalQuantity: 0,
-                        // Simpan referensi metadata awal (dari item pertama/terbaru)
                         room: item.room,
                         rackCode: item.rackCode,
                         description: item.description,
                         condition: item.condition,
-                        incomingDetails: [] 
+                        incomingDetails: [] // Untuk detail akumulasi
                     };
                 }
-                // Simpan reference ke batch yang akan dikurangi
-                aggregatedStock[key].incomingDetails.push(batchCopy);
+                
+                aggregatedStock[key].totalQuantity += quantity;
+                aggregatedStock[key].incomingDetails.push(item);
+
+                // Hitung Kapasitas Ruangan
+                if (!roomCapacity[item.room]) {
+                    roomCapacity[item.room] = { current: 0 };
+                }
+                roomCapacity[item.room].current += quantity;
             });
             
-            // Step 2: Subtract Outgoing Items from specific batches
+            // 2. Kurangi Stok Keluar
             outgoingItems.forEach(item => {
-                if (item.returned) return;
-
                 const key = `${item.name}|${item.category}`;
-                const outgoingQuantity = parseInt(item.quantity, 10);
-                
-                // Cek apakah item keluar terkait dengan batch spesifik
-                if (item.incoming_batch_id && allBatchesMap[item.incoming_batch_id]) {
-                    // Kurangi stok dari batch yang spesifik
-                    allBatchesMap[item.incoming_batch_id].quantity -= outgoingQuantity;
-                } else if (aggregatedStock[key]) {
-                    // Fallback: Untuk data lama yang tidak punya incoming_batch_id, 
-                    // kita kurangi dari total stok agregat (agar total tetap benar)
-                    // Peringatan: Logika ini tidak ideal untuk FIFO, tapi menjaga total stok.
-                    // Karena kita akan menghitung ulang total di Step 3, kita lewati pengurangan fallback di sini.
+                const quantity = parseInt(item.quantity);
+
+                if (aggregatedStock[key]) {
+                    // Hanya kurangi stok jika barang BELUM dikembalikan
+                    if (!item.returned) {
+                        aggregatedStock[key].totalQuantity -= quantity;
+                        
+                        // Kurangi kapasitas ruang tempat barang itu berasal (berdasarkan item masuk pertama)
+                        if (aggregatedStock[key].room && roomCapacity[aggregatedStock[key].room]) {
+                             roomCapacity[aggregatedStock[key].room].current -= quantity;
+                        }
+                    }
                 }
             });
-
-            // Step 3: Recalculate Total Stock based on reduced batches
+            
+            // Hapus stok yang totalQuantity <= 0
             Object.keys(aggregatedStock).forEach(key => {
-                let totalStock = 0;
-                let validBatches = [];
-
-                // Hitung total quantity yang tersisa dari semua batch yang sudah dikurangi
-                aggregatedStock[key].incomingDetails.forEach(batch => {
-                    // Hanya tambahkan batch jika stoknya > 0
-                    if (batch.quantity > 0) {
-                        totalStock += batch.quantity;
-                        validBatches.push(batch);
-                    }
-                });
-                
-                aggregatedStock[key].totalQuantity = totalStock;
-                // Simpan hanya batch yang tersisa, diurutkan dari terbaru (terlama berada di akhir)
-                aggregatedStock[key].incomingDetails = validBatches.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                
-                // Hapus stok yang totalQuantity <= 0
-                if (totalStock <= 0) {
+                if (aggregatedStock[key].totalQuantity <= 0) {
                     delete aggregatedStock[key];
                 }
             });
         }
         
         /**
-         * Menambahkan item masuk ke Supabase (Item 1)
+         * Menambahkan item masuk ke Supabase
          */
         async function addIncomingItemDB(item) {
             if (!supabase) throw new Error("Supabase is not initialized.");
@@ -570,6 +410,7 @@
                 description: item.description,
                 condition: item.condition,
                 date: item.date, // Format date YYYY-MM-DD
+                // timestamp dihapus, diisi otomatis oleh DB
             };
 
             const { error } = await supabase
@@ -588,18 +429,17 @@
         async function addOutgoingItemDB(item) {
             if (!supabase) throw new Error("Supabase is not initialized.");
             
-            // Tambahkan incoming_batch_id ke payload (BARU)
             const newItem = {
                 name: item.name,
                 category: item.category,
                 quantity: parseInt(item.quantity, 10),
-                penerima: item.user, 
+                penerima: item.user, // Mapping data form 'user' ke kolom 'penerima'
                 date: item.date,
+                // notes dihapus (tidak diminta di form outgoing),
                 returned: false,
-                incoming_batch_id: item.batchId // BARU: ID Batch yang diambil
+                // timestamp dihapus, diisi otomatis oleh DB
             };
 
-            // Error PGRST204 terjadi di sini karena DB tidak memiliki kolom incoming_batch_id
             const { error } = await supabase
                 .from('outgoing_items')
                 .insert([newItem]);
@@ -611,21 +451,14 @@
         }
 
         /**
-         * Memperbarui status barang keluar menjadi 'returned' di Supabase (Item 3)
+         * Memperbarui status barang keluar menjadi 'returned' di Supabase
          */
-        async function returnItemInDB(outgoingId, condition, photoUrl) {
+        async function returnItemInDB(outgoingId) {
             if (!supabase) throw new Error("Supabase is not initialized.");
-            
-            const updateData = { 
-                returned: true, 
-                returnDate: new Date().toISOString(),
-                returnCondition: condition, 
-                returnPhotoUrl: photoUrl, 
-            };
             
             const { error } = await supabase
                 .from('outgoing_items')
-                .update(updateData) 
+                .update({ returned: true, "returnDate": new Date().toISOString() }) 
                 .eq('id', outgoingId);
                 
             if (error) throw error;
@@ -635,7 +468,7 @@
 
 
         // ===========================================
-        // FUNGSI DISPLAY & UI LOGIC
+        // 4. FUNGSI DISPLAY & UI LOGIC
         // ===========================================
 
         /**
@@ -669,8 +502,7 @@
         function showMessage(message, type = 'success') {
             const messageContainer = document.getElementById('messageContainer');
             const messageDiv = document.createElement('div');
-            // Tambahkan tipe 'info' untuk notifikasi upload
-            messageDiv.className = `p-4 rounded-xl shadow-lg mb-4 slide-up ${type === 'success' ? 'bg-green-500 text-white' : (type === 'error' ? 'bg-red-500 text-white' : 'bg-blue-500 text-white')}`;
+            messageDiv.className = `p-4 rounded-xl shadow-lg mb-4 slide-up ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`;
             messageDiv.innerHTML = `
                 <div class="flex items-center justify-between">
                     <span>${message}</span>
@@ -691,13 +523,16 @@
         }
 
         /**
-         * Membuka/Menutup Modal
+         * Membuka Modal
          */
         function openModal(id) {
             document.getElementById(id).classList.add('is-open');
             document.getElementById(id).classList.remove('opacity-0', 'pointer-events-none');
         }
 
+        /**
+         * Menutup Modal
+         */
         function closeModal(id) {
             document.getElementById(id).classList.remove('is-open');
             document.getElementById(id).classList.add('opacity-0', 'pointer-events-none');
@@ -710,11 +545,11 @@
             updateStockSummary();
             updateStockTable();
             updateOutgoingSelect();
-            updateBorrowedItemsList(); 
+            updateBorrowedItemsList(); // Hanya di-refresh saat tab dibuka, tapi dipanggil di sini untuk initial load
         }
 
         /**
-         * Memperbarui ringkasan stok (Item 4)
+         * Memperbarui ringkasan stok di menu Stok Terkini
          */
         function updateStockSummary() {
             const totalIncomingCount = incomingItems.reduce((sum, item) => sum + parseInt(item.quantity), 0);
@@ -727,7 +562,7 @@
         }
 
         /**
-         * Mengisi tabel Stok Terkini (Item 4)
+         * Mengisi tabel Stok Terkini
          */
         function updateStockTable() {
             const tbody = document.getElementById('stockTableBody');
@@ -759,7 +594,7 @@
         }
 
         /**
-         * Menampilkan detail item (akumulasi) saat diklik (Item 4 modifikasi)
+         * Menampilkan detail item (akumulasi) saat diklik
          */
         function showStockDetail(key) {
             const item = aggregatedStock[key];
@@ -768,44 +603,50 @@
             document.getElementById('stockDetailName').textContent = item.name;
             const content = document.getElementById('stockDetailContent');
             
-            // --- BAGIAN INI DIHAPUS SESUAI PERMINTAAN ---
-            /*
-            // Ambil batch pertama (yang paling lama) untuk Kondisi & Deskripsi Awal
-            const firstIncoming = item.incomingDetails.length > 0 ? item.incomingDetails[item.incomingDetails.length - 1] : {}; 
+            let html = `
+                <div class="bg-gray-50 p-4 rounded-xl space-y-2">
+                    <p><span class="font-semibold">Kategori:</span> ${item.category}</p>
+                    <p><span class="font-semibold">Deskripsi (Input Pertama):</span> ${item.description || 'Tidak ada'}</p>
+                    <p><span class="font-semibold">Kondisi (Input Pertama):</span> 
+                        <span class="${item.condition === 'Baik' ? 'text-green-600' : 'text-red-600'} font-bold">${item.condition}</span>
+                    </p>
+                </div>
+                <h4 class="text-lg font-semibold border-b pb-1 mt-4">Riwayat Masuk (Akumulasi)</h4>
+                
+            `;
+			if (!item) return;
+
+            document.getElementById('stockDetailName').textContent = item.name;
+            const content = document.getElementById('stockDetailContent');
+            
+            // Tentukan item referensi pertama untuk Deskripsi dan Kondisi Awal
+            const firstIncoming = item.incomingDetails[item.incomingDetails.length - 1]; // Asumsi riwayat masuk diurutkan dari baru ke lama saat fetch, ambil yang terakhir
             
             let html = `
                 <div class="bg-gray-50 p-4 rounded-xl space-y-2">
                     <p><span class="font-semibold">Kategori:</span> ${item.category}</p>
-                    <p><span class="font-semibold">Deskripsi Awal:</span> ${firstIncoming.description || 'Tidak ada'}</p>
+                    <p><span class="font-semibold">Harga Beli Terakhir:</span> ${formatRupiah(item.buyPrice || 0)}</p> 
+                    
+                    <p><span class="font-semibold">Deskripsi Awal:</span> ${firstIncoming ? firstIncoming.description : 'Tidak ada'}</p>
                     <p><span class="font-semibold">Kondisi Awal:</span> 
-                        <span class="${firstIncoming.condition === 'Baik' ? 'text-green-600' : 'text-red-600'} font-bold">${firstIncoming.condition || 'N/A'}</span>
+                        <span class="${firstIncoming && firstIncoming.condition === 'Baik' ? 'text-green-600' : 'text-red-600'} font-bold">${firstIncoming ? firstIncoming.condition : 'N/A'}</span>
                     </p>
                 </div>
-                <h4 class="text-lg font-semibold border-b pb-1 mt-4">Riwayat Masuk (Sisa Stok per Batch)</h4>
+       
+         <h4 class="text-lg font-semibold border-b pb-1 mt-4">Riwayat Masuk (Akumulasi)</h4>
+                
             `;
-            */
-
-            // --- KODE HTML BARU TANPA RINGKASAN AWAL ---
-            let html = `
-                <h4 class="text-lg font-semibold border-b pb-1 mb-4">Riwayat Masuk (Sisa Stok per Batch)</h4>
-            `;
+            // Sisanya tetap sama, menampilkan detail setiap batch
             
             // Tampilkan detail setiap kali barang masuk
-            // item.incomingDetails diurutkan dari yang terbaru, jadi kita iterasi untuk menampilkan
             item.incomingDetails.forEach((detail, index) => {
-                // Gunakan detail.quantity yang sudah dikurangi (mutable copy)
-                const currentQuantity = detail.quantity; 
-                
                 html += `
                     <div class="border-l-4 border-green-400 pl-4 py-2 bg-white shadow-sm rounded-lg">
-                        <p class="font-medium text-gray-700">Batch #${item.incomingDetails.length - index} | 
-                        <span class="font-bold text-blue-600">${currentQuantity} unit</span> tersisa</p>
+                        <p class="font-medium text-gray-700">Batch #${index + 1} (${detail.quantity} unit)</p>
                         <ul class="text-sm text-gray-600 space-y-0.5 mt-1">
                             <li><span class="font-medium">Tanggal Masuk:</span> ${new Date(detail.date).toLocaleDateString('id-ID')}</li>
                             <li><span class="font-medium">Ruang:</span> ${detail.room}</li>
                             <li><span class="font-medium">Kode Rak:</span> ${detail.rackCode}</li>
-                            <li><span class="font-medium">Kondisi Saat Masuk:</span> ${detail.condition}</li>
-                            <li><span class="font-medium">Deskripsi:</span> ${detail.description || 'N/A'}</li>
                         </ul>
                     </div>
                 `;
@@ -814,70 +655,13 @@
             content.innerHTML = html;
             openModal('stockDetailModal');
         }
-        
-        /**
-         * BARU: Mengisi dropdown Batch berdasarkan item yang dipilih
-         */
-        function updateBatchSelect(selectedKey) {
-            const container = document.getElementById('batchSelectContainer');
-            const select = document.getElementById('outgoingBatchSelect');
-            const detailInfo = document.getElementById('batchDetailInfo');
-
-            select.innerHTML = '<option value="">Pilih batch spesifik</option>';
-            detailInfo.textContent = 'Pilih batch untuk melihat deskripsi lengkap.';
-            
-            if (!selectedKey || !aggregatedStock[selectedKey]) {
-                container.classList.add('hidden');
-                return;
-            }
-
-            const [name, category] = selectedKey.split('|');
-            // Menggunakan incomingDetails yang kini hanya berisi batch > 0
-            const batches = aggregatedStock[selectedKey].incomingDetails;
-            
-            let batchCounter = batches.length;
-
-            batches.forEach((batch, index) => {
-                const option = document.createElement('option');
-                // Penting: ID batch yang dikirim ke DB
-                option.value = batch.id; 
-                
-                // Tampilkan detail lengkap di dropdown
-                let label = `Batch #${batchCounter} | Sisa: ${batch.quantity} | Rak: ${batch.rackCode} | Kondisi: ${batch.condition}`;
-                
-                option.textContent = label;
-                select.appendChild(option);
-                batchCounter--;
-            });
-
-            container.classList.remove('hidden');
-            
-            // Event listener untuk update deskripsi batch
-            select.onchange = function() {
-                const selectedBatchId = this.value;
-                // Cari batch di aggregatedStock.incomingDetails
-                const selectedBatch = batches.find(b => b.id == selectedBatchId);
-
-                if (selectedBatch) {
-                    detailInfo.innerHTML = `
-                        Rak: ${selectedBatch.rackCode} (${selectedBatch.room}) | 
-                        Kondisi: <span class="font-bold text-${selectedBatch.condition === 'Baik' ? 'green-600' : 'red-600'}">${selectedBatch.condition}</span> | 
-                        Deskripsi: ${selectedBatch.description || 'Tidak ada deskripsi.'}
-                    `;
-                } else {
-                    detailInfo.textContent = 'Pilih batch untuk melihat deskripsi lengkap.';
-                }
-            };
-        }
-
 
         /**
-         * Mengisi dropdown Barang Keluar (Item 2)
+         * Mengisi dropdown Barang Keluar
          */
         function updateOutgoingSelect() {
             const select = document.getElementById('outgoingItemSelect');
-            // Urutkan A-Z berdasarkan nama
-            const availableItems = Object.values(aggregatedStock).sort((a, b) => a.name.localeCompare(b.name));
+            const availableItems = Object.values(aggregatedStock).filter(item => item.totalQuantity > 0).sort((a, b) => a.name.localeCompare(b.name));
             
             select.innerHTML = '<option value="">Pilih barang (Stok tersedia: 0)</option>';
             
@@ -889,52 +673,27 @@
                 select.appendChild(option);
             });
 
-            // Update stok yang tersedia dan modal konfirmasi saat dropdown diubah
-            document.getElementById('outgoingItemSelect').onchange = function() {
+            // Update stok yang tersedia saat dropdown diubah
+            document.getElementById('outgoingItemSelect').addEventListener('change', function() {
                 const selectedKey = this.value;
                 const availableStockSpan = document.getElementById('availableStock');
                 const quantityInput = document.getElementById('outgoingQuantity');
-                const confirmationContent = document.getElementById('outgoingConfirmationContent');
-                
-                // BARU: Panggil update Batch Selection
-                updateBatchSelect(selectedKey);
                 
                 if (selectedKey && aggregatedStock[selectedKey]) {
-                    const item = aggregatedStock[selectedKey];
-                    availableStockSpan.textContent = item.totalQuantity;
-                    quantityInput.max = item.totalQuantity;
+                    const stock = aggregatedStock[selectedKey].totalQuantity;
+                    availableStockSpan.textContent = stock;
+                    quantityInput.max = stock;
                     quantityInput.value = '';
-                    
-                    const [name, category] = selectedKey.split('|');
-                    const metadataRef = getItemMetadata(name, category) || item; 
-
-                    // Deskripsi barang (Item 2) - HANYA DESKRIPSI UTAMA
-                    confirmationContent.innerHTML = `
-                        <p class="text-gray-700 font-semibold">Detail Stok Utama:</p>
-                        <div class="p-3 bg-blue-50 rounded-lg space-y-1">
-                            <p><span class="font-semibold">Nama:</span> ${item.name}</p>
-                            <p><span class="font-semibold">Stok Tersedia:</span> ${item.totalQuantity}</p>
-                            <p><span class="font-semibold">Kondisi Awal:</span> <span class="text-${metadataRef.condition === 'Baik' ? 'green' : 'red'}-600 font-bold">${metadataRef.condition || 'N/A'}</span></p>
-                            <p><span class="font-semibold">Lokasi Rak Awal:</span> ${metadataRef.rackCode || 'N/A'} (${metadataRef.room || 'N/A'})</p>
-                            <p><span class="font-semibold">Deskripsi Awal:</span> ${metadataRef.description || 'Tidak ada deskripsi.'}</p>
-                        </div>
-                        <p class="text-sm text-red-600 mt-2">Pastikan Anda memilih Batch/Detail Input di atas!</p>
-                    `;
-                    openModal('outgoingConfirmationModal'); // Tampilkan modal setelah pemilihan utama
                 } else {
                     availableStockSpan.textContent = '0';
                     quantityInput.max = '';
                     quantityInput.value = '';
-                    confirmationContent.innerHTML = `<p class="text-center text-gray-500">Pilih barang untuk melihat detail.</p>`;
-                    closeModal('outgoingConfirmationModal');
                 }
-            };
-            // Panggil onchange secara manual jika sudah ada nilai yang dipilih saat load tab
-            if(select.value) select.onchange(); 
+            });
         }
         
         /**
-         * Mengisi daftar Barang yang Dipinjam (Menu Pengembalian) (Item 3)
+         * Mengisi daftar Barang yang Dipinjam (Menu Pengembalian)
          */
         function updateBorrowedItemsList() {
             const container = document.getElementById('borrowedItemsList');
@@ -946,9 +705,8 @@
                 return;
             }
 
-            // Tampilkan daftar barang yang dipinjam
             container.innerHTML = borrowedItems.map(item => `
-                <div class="p-4 bg-white border border-gray-200 rounded-xl shadow-sm flex justify-between items-center hover:bg-gray-50 transition-colors">
+                <div class="p-4 bg-white border border-gray-200 rounded-xl shadow-sm flex justify-between items-center">
                     <div>
                         <h4 class="font-bold text-gray-900">${item.name} (${item.category})</h4>
                         <p class="text-sm text-gray-600">Dipinjam oleh: ${item.penerima} | Jumlah: ${item.quantity}</p>
@@ -961,22 +719,14 @@
         }
 
         /**
-         * Menampilkan detail barang yang dipinjam saat tombol 'Cek & Kembalikan' diklik (Item 3)
+         * Menampilkan detail barang yang dipinjam saat tombol 'Cek & Kembalikan' diklik
          */
         function showReturnDetail(outgoingId) {
             const outgoingItem = outgoingItems.find(item => item.id == outgoingId);
             if (!outgoingItem) return;
 
-            // GANTI: Gunakan fungsi metadata khusus
-            // Jika outgoingItem memiliki incoming_batch_id, cari metadata dari batch spesifik itu
-            let metadataRef = null;
-            if (outgoingItem.incoming_batch_id) {
-                metadataRef = incomingItems.find(i => i.id == outgoingItem.incoming_batch_id);
-            }
-            // Jika tidak ada ID batch (untuk entri lama) atau tidak ditemukan, fallback ke metadata awal
-            if (!metadataRef) {
-                metadataRef = getItemMetadata(outgoingItem.name, outgoingItem.category);
-            }
+            const aggregatedKey = `${outgoingItem.name}|${outgoingItem.category}`;
+            const incomingRef = aggregatedStock[aggregatedKey] || incomingItems.find(i => i.name === outgoingItem.name && i.category === outgoingItem.category);
             
             const content = document.getElementById('returnDetailContent');
             
@@ -984,35 +734,23 @@
                 <div class="space-y-3 p-4 bg-gray-50 rounded-xl">
                     <h4 class="font-bold text-lg text-gray-900">${outgoingItem.name}</h4>
                     <p><span class="font-semibold">Peminjam:</span> ${outgoingItem.penerima}</p>
-                    <p><span class="font-semibold">Jumlah Pinjam:</span> <span class="font-bold text-red-600">${outgoingItem.quantity} unit</span></p>
                     <p><span class="font-semibold">Tanggal Pinjam:</span> ${new Date(outgoingItem.date).toLocaleDateString('id-ID')}</p>
-                    
-                    <!-- Detail Barang yang Dipinjam -->
-                    <p><span class="font-semibold">Deskripsi:</span> ${metadataRef ? metadataRef.description : 'N/A'}</p>
-                    <p><span class="font-semibold">Kondisi Awal:</span> 
-                        <span class="font-bold ${metadataRef && metadataRef.condition === 'Baik' ? 'text-green-600' : 'text-red-600'}">
-                            ${metadataRef ? metadataRef.condition : 'N/A'}
+                    <p><span class="font-semibold">Jumlah Pinjam:</span> <span class="font-bold text-red-600">${outgoingItem.quantity} unit</span></p>
+                </div>
+
+                <div class="space-y-3 p-4 border border-blue-200 rounded-xl bg-blue-50">
+                    <h4 class="font-bold text-md text-blue-800">Informasi Gudang</h4>
+                    <p><span class="font-semibold">Kode Rak Asal:</span> <span class="font-bold">${incomingRef ? incomingRef.rackCode : 'N/A'}</span></p>
+                    <p><span class="font-semibold">Kondisi Saat Masuk:</span> 
+                        <span class="font-bold ${incomingRef && incomingRef.condition === 'Baik' ? 'text-green-600' : 'text-red-600'}">
+                            ${incomingRef ? incomingRef.condition : 'N/A'}
                         </span>
                     </p>
-                    <p><span class="font-semibold">Kode Rak Asal:</span> <span class="font-bold text-blue-700">${metadataRef ? metadataRef.rackCode : 'N/A'}</span></p>
-                </div>
-
-                <!-- Input Kondisi dan Foto Pengembalian -->
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Kondisi Saat Dikembalikan</label>
-                    <select id="returnCondition" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500" required>
-                        <option value="Baik">Baik</option>
-                        <option value="Rusak">Rusak</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Bukti Fisik (Foto)</label>
-                    <input type="file" id="returnPhoto" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+                    <p><span class="font-semibold">Deskripsi:</span> ${incomingRef ? incomingRef.description : 'N/A'}</p>
                 </div>
 
                 <p class="text-sm text-center text-red-600 font-medium mt-4 p-2 bg-red-100 rounded-lg">
-                    ⚠️ Kembalikan barang sesuai pada rak-nya (${metadataRef ? metadataRef.rackCode : 'N/A'}).
+                    ⚠️ Kembalikan barang sesuai pada rak-nya (${incomingRef ? incomingRef.rackCode : 'N/A'}).
                 </p>
 
                 <button onclick="confirmReturn('${outgoingItem.id}')" class="w-full bg-green-600 text-white py-3 mt-4 rounded-xl font-semibold hover:bg-green-700 transition-colors">
@@ -1023,33 +761,13 @@
         }
 
         /**
-         * Konfirmasi Pengembalian Barang (Handler)
+         * Konfirmasi Pengembalian Barang
          */
         async function confirmReturn(outgoingId) {
-            const condition = document.getElementById('returnCondition').value;
-            const photoFile = document.getElementById('returnPhoto').files[0];
-            
-            let photoUrl = null;
-
             try {
-                if (photoFile) {
-                    showMessage('⏳ Mengunggah bukti fisik...', 'info');
-                    photoUrl = await uploadFile(photoFile);
-                    showMessage('✅ Bukti fisik berhasil diunggah! Melanjutkan konfirmasi...', 'info');
-                }
-                
-                await returnItemInDB(outgoingId, condition, photoUrl);
-                
-                // PANGGILAN STUB: Notifikasi Email Pengembalian
-                const outgoingItem = outgoingItems.find(item => item.id == outgoingId);
-                if (outgoingItem) {
-                     const emailSubject = `🎉 Barang Kembali: ${outgoingItem.name} (${outgoingItem.quantity} unit) dari ${outgoingItem.penerima}`;
-                     const emailBody = `Barang **${outgoingItem.name}** sebanyak **${outgoingItem.quantity} unit** telah dikembalikan oleh **${outgoingItem.penerima}**. Kondisi: **${condition}**. Link Foto: ${photoUrl || 'Tidak ada bukti fisik.'}`;
-                     sendEmailNotification(emailSubject, emailBody);
-                }
-
+                await returnItemInDB(outgoingId);
                 closeModal('returnDetailModal');
-                showMessage(`✅ Barang berhasil dikembalikan! Stok diperbarui. Kondisi: ${condition}.`);
+                showMessage(`✅ Barang berhasil dikembalikan! Stok diperbarui.`);
             } catch (error) {
                 console.error('Return error:', error);
                 showMessage('❌ Gagal mengkonfirmasi pengembalian: ' + error.message, 'error');
@@ -1057,7 +775,7 @@
         }
 
 
-        // --- EXPORT FUNCTION (Item 4) ---
+        // --- EXPORT FUNCTION ---
 
         function exportToExcel() {
             try {
@@ -1070,36 +788,10 @@
                     'Total Stok': item.totalQuantity,
                     'Kode Rak Asal': item.rackCode || 'Tidak diketahui',
                     'Kondisi Awal': item.condition || 'Tidak diketahui',
-                    'Deskripsi Awal': item.description || 'Tidak ada'
-                }));
-
-                // 2. Riwayat Barang Masuk Lengkap 
-                const incomingHistoryData = incomingItems.map(item => ({
-                    'Tanggal Masuk': new Date(item.timestamp).toLocaleDateString('id-ID'),
-                    'Nama Barang': item.name,
-                    'Kategori': item.category,
-                    'Jumlah Masuk': item.quantity,
-                    'Kondisi': item.condition,
-                    'Ruang': item.room,
-                    'Kode Rak': item.rackCode,
-                    'Deskripsi': item.description,
+                    'Deskripsi': item.description || 'Tidak ada'
                 }));
                 
-                // 3. Riwayat Barang Keluar Lengkap 
-                const outgoingHistoryData = outgoingItems.map(item => ({
-                    'Tanggal Keluar': new Date(item.timestamp).toLocaleDateString('id-ID'),
-                    'Nama Barang': item.name,
-                    'Kategori': item.category,
-                    'Jumlah Keluar': item.quantity,
-                    'Penerima': item.penerima,
-                    'Status Pengembalian': item.returned ? 'SUDAH' : 'BELUM',
-                    'Tanggal Kembali': item.returnDate ? new Date(item.returnDate).toLocaleDateString('id-ID') : 'N/A',
-                    'Kondisi Kembali': item.returnCondition || 'N/A',
-                    'Link Bukti Foto': item.returnPhotoUrl || 'N/A', 
-                    'ID Batch Masuk': item.incoming_batch_id || 'N/A', // Tambah ID Batch
-                }));
-
-                // 4. Ringkasan
+                // 2. Ringkasan
                 const totalIncoming = incomingItems.reduce((sum, item) => sum + parseInt(item.quantity), 0);
                 const totalOutgoing = outgoingItems.reduce((sum, item) => sum + (item.returned ? 0 : parseInt(item.quantity)), 0);
                 const remainingStock = Object.values(aggregatedStock).reduce((sum, item) => sum + item.totalQuantity, 0);
@@ -1111,20 +803,17 @@
                 ];
                 
                 const currentStockWS = XLSX.utils.json_to_sheet(currentStockData);
-                const incomingHistoryWS = XLSX.utils.json_to_sheet(incomingHistoryData); 
-                const outgoingHistoryWS = XLSX.utils.json_to_sheet(outgoingHistoryData); 
                 const summaryWS = XLSX.utils.json_to_sheet(summaryData);
                 
                 XLSX.utils.book_append_sheet(workbook, summaryWS, "Ringkasan");
                 XLSX.utils.book_append_sheet(workbook, currentStockWS, "Stok Terkini");
-                XLSX.utils.book_append_sheet(workbook, incomingHistoryWS, "Riwayat Barang Masuk"); 
-                XLSX.utils.book_append_sheet(workbook, outgoingHistoryWS, "Riwayat Barang Keluar"); 
                 
                 const now = new Date();
                 const dateStr = now.toISOString().split('T')[0];
                 const filename = `GudangCeria_Inventory_${dateStr}.xlsx`;
                 
                 XLSX.writeFile(workbook, filename);
+                
                 showMessage('✅ Data berhasil diekspor ke Excel!');
                 
             } catch (error) {
@@ -1135,7 +824,7 @@
         
         // --- EVENT LISTENERS ---
         
-        // Form Barang Masuk (Item 1)
+        // Form Barang Masuk
         document.getElementById('incomingForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const form = e.target;
@@ -1153,8 +842,7 @@
 
             try {
                 const rackCode = await addIncomingItemDB(item);
-                // Pop up "terimakasih, barang anda telah masuk di rak (sebutkan kode rak yang diinput)"
-                showMessage(`✅ Terima kasih! Barang masuk '${item.name}' berhasil disimpan di rak ${rackCode}.`, 'success');
+                showMessage(`✅ Barang masuk '${item.name}' berhasil disimpan ke rak ${rackCode}!`);
                 form.reset();
             } catch (error) {
                 console.error('Incoming item submission failed:', error);
@@ -1162,19 +850,13 @@
             }
         });
         
-        // Form Barang Keluar (Item 2)
+        // Form Barang Keluar
         document.getElementById('outgoingForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const form = e.target;
             const selectedKey = form.outgoingItemSelect.value;
-            const selectedBatchId = form.outgoingBatchSelect.value; // BARU: Ambil ID Batch
             const itemQuantity = parseInt(form.outgoingQuantity.value, 10);
             const availableStock = aggregatedStock[selectedKey] ? aggregatedStock[selectedKey].totalQuantity : 0;
-
-            if (!selectedBatchId) {
-                showMessage('⚠️ Gagal: Anda harus memilih Batch/Detail Input spesifik dari mana barang akan diambil.', 'error');
-                return;
-            }
 
             if (itemQuantity > availableStock) {
                 showMessage('⚠️ Gagal: Jumlah keluar melebihi stok yang tersedia.', 'error');
@@ -1189,22 +871,13 @@
                 quantity: itemQuantity,
                 user: form.outgoingUser.value,
                 date: form.outgoingDate.value,
-                batchId: selectedBatchId, // BARU: Sertakan ID Batch
             };
 
             try {
                 await addOutgoingItemDB(item);
-                
-                // PANGGILAN STUB: Notifikasi Email Barang Keluar
-                const emailSubject = `🚨 Barang Keluar: ${item.name} (${item.quantity} unit) oleh ${item.user}`;
-                const emailBody = `Barang **${item.name}** (${item.category}) sebanyak **${item.quantity} unit** telah diambil oleh **${item.user}** pada tanggal ${item.date} dari Batch ID: ${selectedBatchId}.`;
-                sendEmailNotification(emailSubject, emailBody);
-
                 showMessage(`✅ Barang keluar '${item.name}' (${item.quantity} unit) berhasil dicatat!`);
                 form.reset();
-                updateOutgoingSelect(); // Panggil ini untuk membersihkan dropdown batch
-                closeModal('outgoingConfirmationModal'); 
-
+                updateOutgoingSelect(); // Refresh dropdown
             } catch (error) {
                 console.error('Outgoing item submission failed:', error);
                 showMessage('❌ Gagal mencatat Barang Keluar: ' + error.message, 'error');
@@ -1214,7 +887,6 @@
         // --- INITIAL LOAD ---
         fetchData();
         showTab('stock');
-
 // ===========================================
 // 9. EKSPOR SEMUA FUNGSI KE GLOBAL (AGAR BISA DIPANGGIL BUTTON)
 // ===========================================
@@ -1230,5 +902,11 @@ window.exportToExcel = exportToExcel;
     </script>
 </body>
 </html>
+
+
+
+
+
+
 
 
