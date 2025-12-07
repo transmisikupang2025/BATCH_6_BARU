@@ -6,8 +6,6 @@
     <title>Gudang Ceria - Inventory Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.10.0/dist/umd/supabase.min.js"></script>
-    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
@@ -261,7 +259,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div class="text-center">
                 <p class="text-lg font-semibold text-blue-300 mb-2">Gudang Ceria - Cekatan, Rapi, Indah, dan Aman</p>
-                <p class="text-gray-400 text-sm">Inventory Management System oleh Aditya Condro Bagaskoro</p>
+                <p class="text-gray-400 text-sm">Inventory Management System</p>
             </div>
         </div>
     </footer>
@@ -269,10 +267,12 @@
 <script type="module">
   import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
+  // ===========================================
+  // 1. KONFIGURASI SUPABASE (Hapus import lama)
+  // ===========================================
   const SUPABASE_URL = 'https://ixbujhmqvbmyihvocfmw.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4YnVqaG1xdmJteWlodm9jZm13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEwMDg4MTMsImV4cCI6MjA3NjU4NDgxM30.Jja-9XyFfiOYKK9-E2rtosSm4Dp315PR0zTOmXFaFYw'; // tetap hati-hati menyimpan key di client
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4YnVqaG1xdmJteWlodm9jZm13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEwMDg4MTMsImV4cCI6MjA3NjU4NDgxM30.Jja-9XyFfiOYKK9-E2rtosSm4Dp315PR0zTOmXFaFYw'; // GANTI INI DENGAN KUNCI ANDA
 
-  // Inisialisasi langsung dengan fungsi yang sudah diimport
   let supabase = null;
   try {
     if (SUPABASE_URL && SUPABASE_ANON_KEY) {
@@ -286,627 +286,530 @@
 
   if (!supabase) {
     console.error("Supabase client not initialized. Please check your keys and URL.");
-    showMessage('❌ Koneksi database gagal. Cek konsol untuk detail.', 'error');
+    // showMessage('❌ Koneksi database gagal. Cek konsol untuk detail.', 'error'); // Biarkan saja
   }
 
-        // Variabel global untuk cache data
-        let incomingItems = []; // Semua data riwayat barang masuk
-        let outgoingItems = []; // Semua data riwayat barang keluar
-        let aggregatedStock = {}; // Stok dihitung per NamaBarang|Kategori
-        let roomCapacity = {}; // Kapasitas Ruangan
+    // Variabel global untuk cache data
+    let incomingItems = []; 
+    let outgoingItems = []; 
+    let aggregatedStock = {}; 
 
-        // ===========================================
-        // 2. FUNGSI UTAMA CRUD DENGAN SUPABASE
-        // ===========================================
+    // ===========================================
+    // 2. FUNGSI UTILITY (Wajib Ditambahkan)
+    // ===========================================
+    function formatRupiah(amount) {
+        if (typeof amount !== 'number') return 'Rp 0';
+        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
+    }
+    
+    // ===========================================
+    // 3. FUNGSI CRUD DENGAN SUPABASE
+    // (Kode ini tidak diubah secara signifikan, fokus pada ekspor)
+    // ===========================================
 
-        /**
-         * Mengambil semua data dari Supabase
-         */
-        async function fetchData() {
-            if (!supabase) return;
-            try {
-                // Fetch Incoming Items
-                const { data: incomingData, error: incomingError } = await supabase
-                    .from('incoming_items')
-                    .select('*')
-                    .order('timestamp', { ascending: false });
-
-                if (incomingError) throw incomingError;
-                incomingItems = incomingData || [];
-
-                // Fetch Outgoing Items (Mengambil kolom 'penerima')
-                const { data: outgoingData, error: outgoingError } = await supabase
-                    .from('outgoing_items')
-                    .select('*')
-                    .order('timestamp', { ascending: false });
-
-                if (outgoingError) throw outgoingError;
-                outgoingItems = outgoingData || [];
-
-                recalculateAllData();
-                updateAllDisplays();
-
-            } catch (error) {
-                console.error('Error fetching data:', error.message);
-                showMessage('❌ Gagal mengambil data dari Supabase: ' + error.message, 'error');
-            }
-        }
-        
-        /**
-         * Menghitung ulang Aggregated Stock dan Room Capacity dari riwayat
-         */
-        function recalculateAllData() {
-            aggregatedStock = {};
-            roomCapacity = {};
-
-            // 1. Hitung Stok Masuk dan Simpan Detail Item
-            incomingItems.forEach(item => {
-                const key = `${item.name}|${item.category}`;
-                const quantity = parseInt(item.quantity);
-                
-                if (!aggregatedStock[key]) {
-                    // Hanya simpan detail pertama (ruang, rak, deskripsi, kondisi) dari batch masuk
-                    // Catatan: Jika ada item yang sama masuk ke rak berbeda, sistem akan melacak rak pertama.
-                    aggregatedStock[key] = {
-                        name: item.name,
-                        category: item.category,
-                        totalQuantity: 0,
-                        room: item.room,
-                        rackCode: item.rackCode,
-                        description: item.description,
-                        condition: item.condition,
-                        incomingDetails: [] // Untuk detail akumulasi
-                    };
-                }
-                
-                aggregatedStock[key].totalQuantity += quantity;
-                aggregatedStock[key].incomingDetails.push(item);
-
-                // Hitung Kapasitas Ruangan
-                if (!roomCapacity[item.room]) {
-                    roomCapacity[item.room] = { current: 0 };
-                }
-                roomCapacity[item.room].current += quantity;
-            });
-            
-            // 2. Kurangi Stok Keluar
-            outgoingItems.forEach(item => {
-                const key = `${item.name}|${item.category}`;
-                const quantity = parseInt(item.quantity);
-
-                if (aggregatedStock[key]) {
-                    // Hanya kurangi stok jika barang BELUM dikembalikan
-                    if (!item.returned) {
-                        aggregatedStock[key].totalQuantity -= quantity;
-                        
-                        // Kurangi kapasitas ruang tempat barang itu berasal (berdasarkan item masuk pertama)
-                        if (aggregatedStock[key].room && roomCapacity[aggregatedStock[key].room]) {
-                             roomCapacity[aggregatedStock[key].room].current -= quantity;
-                        }
-                    }
-                }
-            });
-            
-            // Hapus stok yang totalQuantity <= 0
-            Object.keys(aggregatedStock).forEach(key => {
-                if (aggregatedStock[key].totalQuantity <= 0) {
-                    delete aggregatedStock[key];
-                }
-            });
-        }
-        
-        /**
-         * Menambahkan item masuk ke Supabase
-         */
-        async function addIncomingItemDB(item) {
-            if (!supabase) throw new Error("Supabase is not initialized.");
-            
-            const newItem = {
-                name: item.name,
-                category: item.category,
-                quantity: parseInt(item.quantity, 10), 
-                room: item.room,
-                rackCode: item.rackCode,
-                description: item.description,
-                condition: item.condition,
-                date: item.date, // Format date YYYY-MM-DD
-                // timestamp dihapus, diisi otomatis oleh DB
-            };
-
-            const { error } = await supabase
+    async function fetchData() {
+        if (!supabase) return;
+        try {
+            const { data: incomingData, error: incomingError } = await supabase
                 .from('incoming_items')
-                .insert([newItem]);
-            
-            if (error) throw error;
-            
-            await fetchData();
-            return newItem.rackCode; // Mengembalikan kode rak untuk pop-up
-        }
+                .select('*')
+                .order('timestamp', { ascending: false });
 
-        /**
-         * Menambahkan item keluar ke Supabase
-         */
-        async function addOutgoingItemDB(item) {
-            if (!supabase) throw new Error("Supabase is not initialized.");
-            
-            const newItem = {
-                name: item.name,
-                category: item.category,
-                quantity: parseInt(item.quantity, 10),
-                penerima: item.user, // Mapping data form 'user' ke kolom 'penerima'
-                date: item.date,
-                // notes dihapus (tidak diminta di form outgoing),
-                returned: false,
-                // timestamp dihapus, diisi otomatis oleh DB
-            };
+            if (incomingError) throw incomingError;
+            incomingItems = incomingData || [];
 
-            const { error } = await supabase
+            const { data: outgoingData, error: outgoingError } = await supabase
                 .from('outgoing_items')
-                .insert([newItem]);
+                .select('*')
+                .order('timestamp', { ascending: false });
 
-            if (error) throw error;
-            
-            await fetchData();
-            return newItem;
+            if (outgoingError) throw outgoingError;
+            outgoingItems = outgoingData || [];
+
+            recalculateAllData();
+            updateAllDisplays();
+
+        } catch (error) {
+            console.error('Error fetching data:', error.message);
+            showMessage('❌ Gagal mengambil data dari Supabase: ' + error.message, 'error');
         }
-
-        /**
-         * Memperbarui status barang keluar menjadi 'returned' di Supabase
-         */
-        async function returnItemInDB(outgoingId) {
-            if (!supabase) throw new Error("Supabase is not initialized.");
-            
-            const { error } = await supabase
-                .from('outgoing_items')
-                .update({ returned: true, "returnDate": new Date().toISOString() }) 
-                .eq('id', outgoingId);
-                
-            if (error) throw error;
-
-            await fetchData();
-        }
-
-
-        // ===========================================
-        // 4. FUNGSI DISPLAY & UI LOGIC
-        // ===========================================
-
-        /**
-         * Mengubah tampilan tab
-         */
-        function showTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.add('hidden');
-            });
-            
-            document.querySelectorAll('.tab-button').forEach(button => {
-                button.className = 'tab-button flex-1 py-3 px-6 rounded-xl font-semibold transition-all duration-200 text-gray-600 hover:bg-gray-100';
-            });
-            
-            document.getElementById(tabName + 'Content').classList.remove('hidden');
-            document.getElementById(tabName + 'Content').classList.add('fade-in');
-            
-            document.getElementById(tabName + 'Tab').className = 'tab-button flex-1 py-3 px-6 rounded-xl font-semibold transition-all duration-200 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md';
-
-            // Khusus tab yang perlu refresh data (Outgoing dan Return)
-            if (tabName === 'outgoing') {
-                updateOutgoingSelect();
-            } else if (tabName === 'return') {
-                updateBorrowedItemsList();
-            }
-        }
+    }
+    
+    function recalculateAllData() {
+        aggregatedStock = {};
         
-        /**
-         * Menampilkan pesan pop-up/notifikasi
-         */
-        function showMessage(message, type = 'success') {
-            const messageContainer = document.getElementById('messageContainer');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `p-4 rounded-xl shadow-lg mb-4 slide-up ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`;
-            messageDiv.innerHTML = `
-                <div class="flex items-center justify-between">
-                    <span>${message}</span>
-                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-            `;
-            messageContainer.appendChild(messageDiv);
+        incomingItems.forEach(item => {
+            const key = `${item.name}|${item.category}`;
+            const quantity = parseInt(item.quantity);
             
-            setTimeout(() => {
-                if (messageDiv.parentElement) {
-                    messageDiv.remove();
+            if (!aggregatedStock[key]) {
+                aggregatedStock[key] = {
+                    name: item.name,
+                    category: item.category,
+                    totalQuantity: 0,
+                    room: item.room,
+                    rackCode: item.rackCode,
+                    description: item.description,
+                    condition: item.condition,
+                    incomingDetails: [] 
+                };
+            }
+            
+            aggregatedStock[key].totalQuantity += quantity;
+            aggregatedStock[key].incomingDetails.push(item);
+        });
+        
+        outgoingItems.forEach(item => {
+            const key = `${item.name}|${item.category}`;
+            const quantity = parseInt(item.quantity);
+
+            if (aggregatedStock[key]) {
+                if (!item.returned) {
+                    aggregatedStock[key].totalQuantity -= quantity;
                 }
-            }, 5000);
-        }
+            }
+        });
+        
+        Object.keys(aggregatedStock).forEach(key => {
+            if (aggregatedStock[key].totalQuantity <= 0) {
+                delete aggregatedStock[key];
+            }
+        });
+    }
+    
+    async function addIncomingItemDB(item) {
+        if (!supabase) throw new Error("Supabase is not initialized.");
+        const newItem = {
+            name: item.name,
+            category: item.category,
+            quantity: parseInt(item.quantity, 10), 
+            room: item.room,
+            rackCode: item.rackCode,
+            description: item.description,
+            condition: item.condition,
+            date: item.date, 
+        };
 
-        /**
-         * Membuka Modal
-         */
-        function openModal(id) {
-            document.getElementById(id).classList.add('is-open');
-            document.getElementById(id).classList.remove('opacity-0', 'pointer-events-none');
-        }
+        const { error } = await supabase
+            .from('incoming_items')
+            .insert([newItem]);
+        
+        if (error) throw error;
+        
+        await fetchData();
+        return newItem.rackCode;
+    }
 
-        /**
-         * Menutup Modal
-         */
-        function closeModal(id) {
-            document.getElementById(id).classList.remove('is-open');
-            document.getElementById(id).classList.add('opacity-0', 'pointer-events-none');
-        }
+    async function addOutgoingItemDB(item) {
+        if (!supabase) throw new Error("Supabase is not initialized.");
+        
+        const newItem = {
+            name: item.name,
+            category: item.category,
+            quantity: parseInt(item.quantity, 10),
+            penerima: item.user,
+            date: item.date,
+            returned: false,
+        };
 
-        /**
-         * Memperbarui semua tampilan UI
-         */
-        function updateAllDisplays() {
-            updateStockSummary();
-            updateStockTable();
+        const { error } = await supabase
+            .from('outgoing_items')
+            .insert([newItem]);
+
+        if (error) throw error;
+        
+        await fetchData();
+        return newItem;
+    }
+
+    async function returnItemInDB(outgoingId) {
+        if (!supabase) throw new Error("Supabase is not initialized.");
+        
+        const { error } = await supabase
+            .from('outgoing_items')
+            .update({ returned: true, "returnDate": new Date().toISOString() }) 
+            .eq('id', outgoingId);
+            
+        if (error) throw error;
+
+        await fetchData();
+    }
+
+
+    // ===========================================
+    // 4. FUNGSI DISPLAY & UI LOGIC
+    // ===========================================
+
+    // Fungsi showTab, showMessage, openModal, closeModal sudah benar dan akan diekspor di akhir
+    
+    function showTab(tabName) {
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.add('hidden');
+        });
+        
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.className = 'tab-button flex-1 py-3 px-6 rounded-xl font-semibold transition-all duration-200 text-gray-600 hover:bg-gray-100';
+        });
+        
+        document.getElementById(tabName + 'Content').classList.remove('hidden');
+        document.getElementById(tabName + 'Content').classList.add('fade-in');
+        
+        document.getElementById(tabName + 'Tab').className = 'tab-button flex-1 py-3 px-6 rounded-xl font-semibold transition-all duration-200 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md';
+
+        if (tabName === 'outgoing') {
             updateOutgoingSelect();
-            updateBorrowedItemsList(); // Hanya di-refresh saat tab dibuka, tapi dipanggil di sini untuk initial load
+        } else if (tabName === 'return') {
+            updateBorrowedItemsList();
         }
-
-        /**
-         * Memperbarui ringkasan stok di menu Stok Terkini
-         */
-        function updateStockSummary() {
-            const totalIncomingCount = incomingItems.reduce((sum, item) => sum + parseInt(item.quantity), 0);
-            const totalOutgoingCount = outgoingItems.reduce((sum, item) => sum + (item.returned ? 0 : parseInt(item.quantity)), 0);
-            const remainingStockCount = Object.values(aggregatedStock).reduce((sum, item) => sum + item.totalQuantity, 0);
-
-            document.getElementById('totalIncoming').textContent = totalIncomingCount;
-            document.getElementById('totalOutgoing').textContent = totalOutgoingCount;
-            document.getElementById('remainingStock').textContent = remainingStockCount;
-        }
-
-        /**
-         * Mengisi tabel Stok Terkini
-         */
-        function updateStockTable() {
-            const tbody = document.getElementById('stockTableBody');
-            const availableItems = Object.values(aggregatedStock).sort((a, b) => a.name.localeCompare(b.name));
-            
-            if (availableItems.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-12 text-center text-gray-500">Belum ada data stok barang.</td></tr>`;
-                return;
-            }
-            
-            tbody.innerHTML = availableItems.map(item => `
-                <tr class="hover:bg-gray-50 transition-colors duration-200">
-                    <td class="px-6 py-4 font-semibold text-gray-900 cursor-pointer hover:text-blue-600" onclick="showStockDetail('${item.name}|${item.category}')">
-                        ${item.name}
-                    </td>
-                    <td class="px-6 py-4">
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                            ${item.category}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 text-xl font-bold">${item.totalQuantity}</td>
-                    <td class="px-6 py-4">
-                        <button onclick="showStockDetail('${item.name}|${item.category}')" class="text-blue-600 hover:text-blue-800 font-medium">
-                            Detail Akumulasi
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        /**
-         * Menampilkan detail item (akumulasi) saat diklik
-         */
-        function showStockDetail(key) {
-            const item = aggregatedStock[key];
-            if (!item) return;
-
-            document.getElementById('stockDetailName').textContent = item.name;
-            const content = document.getElementById('stockDetailContent');
-            
-            let html = `
-                <div class="bg-gray-50 p-4 rounded-xl space-y-2">
-                    <p><span class="font-semibold">Kategori:</span> ${item.category}</p>
-                    <p><span class="font-semibold">Deskripsi (Input Pertama):</span> ${item.description || 'Tidak ada'}</p>
-                    <p><span class="font-semibold">Kondisi (Input Pertama):</span> 
-                        <span class="${item.condition === 'Baik' ? 'text-green-600' : 'text-red-600'} font-bold">${item.condition}</span>
-                    </p>
-                </div>
-                <h4 class="text-lg font-semibold border-b pb-1 mt-4">Riwayat Masuk (Akumulasi)</h4>
-                
-            `;
-			if (!item) return;
-
-            document.getElementById('stockDetailName').textContent = item.name;
-            const content = document.getElementById('stockDetailContent');
-            
-            // Tentukan item referensi pertama untuk Deskripsi dan Kondisi Awal
-            const firstIncoming = item.incomingDetails[item.incomingDetails.length - 1]; // Asumsi riwayat masuk diurutkan dari baru ke lama saat fetch, ambil yang terakhir
-            
-            let html = `
-                <div class="bg-gray-50 p-4 rounded-xl space-y-2">
-                    <p><span class="font-semibold">Kategori:</span> ${item.category}</p>
-                    <p><span class="font-semibold">Harga Beli Terakhir:</span> ${formatRupiah(item.buyPrice || 0)}</p> 
-                    
-                    <p><span class="font-semibold">Deskripsi Awal:</span> ${firstIncoming ? firstIncoming.description : 'Tidak ada'}</p>
-                    <p><span class="font-semibold">Kondisi Awal:</span> 
-                        <span class="${firstIncoming && firstIncoming.condition === 'Baik' ? 'text-green-600' : 'text-red-600'} font-bold">${firstIncoming ? firstIncoming.condition : 'N/A'}</span>
-                    </p>
-                </div>
-       
-         <h4 class="text-lg font-semibold border-b pb-1 mt-4">Riwayat Masuk (Akumulasi)</h4>
-                
-            `;
-            // Sisanya tetap sama, menampilkan detail setiap batch
-            
-            // Tampilkan detail setiap kali barang masuk
-            item.incomingDetails.forEach((detail, index) => {
-                html += `
-                    <div class="border-l-4 border-green-400 pl-4 py-2 bg-white shadow-sm rounded-lg">
-                        <p class="font-medium text-gray-700">Batch #${index + 1} (${detail.quantity} unit)</p>
-                        <ul class="text-sm text-gray-600 space-y-0.5 mt-1">
-                            <li><span class="font-medium">Tanggal Masuk:</span> ${new Date(detail.date).toLocaleDateString('id-ID')}</li>
-                            <li><span class="font-medium">Ruang:</span> ${detail.room}</li>
-                            <li><span class="font-medium">Kode Rak:</span> ${detail.rackCode}</li>
-                        </ul>
-                    </div>
-                `;
-            });
-
-            content.innerHTML = html;
-            openModal('stockDetailModal');
-        }
-
-        /**
-         * Mengisi dropdown Barang Keluar
-         */
-        function updateOutgoingSelect() {
-            const select = document.getElementById('outgoingItemSelect');
-            const availableItems = Object.values(aggregatedStock).filter(item => item.totalQuantity > 0).sort((a, b) => a.name.localeCompare(b.name));
-            
-            select.innerHTML = '<option value="">Pilih barang (Stok tersedia: 0)</option>';
-            
-            availableItems.forEach(item => {
-                const key = `${item.name}|${item.category}`;
-                const option = document.createElement('option');
-                option.value = key;
-                option.textContent = `${item.name} (${item.category}) - Stok: ${item.totalQuantity}`;
-                select.appendChild(option);
-            });
-
-            // Update stok yang tersedia saat dropdown diubah
-            document.getElementById('outgoingItemSelect').addEventListener('change', function() {
-                const selectedKey = this.value;
-                const availableStockSpan = document.getElementById('availableStock');
-                const quantityInput = document.getElementById('outgoingQuantity');
-                
-                if (selectedKey && aggregatedStock[selectedKey]) {
-                    const stock = aggregatedStock[selectedKey].totalQuantity;
-                    availableStockSpan.textContent = stock;
-                    quantityInput.max = stock;
-                    quantityInput.value = '';
-                } else {
-                    availableStockSpan.textContent = '0';
-                    quantityInput.max = '';
-                    quantityInput.value = '';
-                }
-            });
-        }
-        
-        /**
-         * Mengisi daftar Barang yang Dipinjam (Menu Pengembalian)
-         */
-        function updateBorrowedItemsList() {
-            const container = document.getElementById('borrowedItemsList');
-            // Filter barang keluar yang BELUM dikembalikan
-            const borrowedItems = outgoingItems.filter(item => !item.returned).sort((a, b) => a.name.localeCompare(b.name));
-            
-            if (borrowedItems.length === 0) {
-                container.innerHTML = `<p class="text-center text-gray-500 py-4">Tidak ada barang yang sedang dipinjam.</p>`;
-                return;
-            }
-
-            container.innerHTML = borrowedItems.map(item => `
-                <div class="p-4 bg-white border border-gray-200 rounded-xl shadow-sm flex justify-between items-center">
-                    <div>
-                        <h4 class="font-bold text-gray-900">${item.name} (${item.category})</h4>
-                        <p class="text-sm text-gray-600">Dipinjam oleh: ${item.penerima} | Jumlah: ${item.quantity}</p>
-                    </div>
-                    <button onclick="showReturnDetail('${item.id}')" class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-600 transition-colors">
-                        Cek & Kembalikan
-                    </button>
-                </div>
-            `).join('');
-        }
-
-        /**
-         * Menampilkan detail barang yang dipinjam saat tombol 'Cek & Kembalikan' diklik
-         */
-        function showReturnDetail(outgoingId) {
-            const outgoingItem = outgoingItems.find(item => item.id == outgoingId);
-            if (!outgoingItem) return;
-
-            const aggregatedKey = `${outgoingItem.name}|${outgoingItem.category}`;
-            const incomingRef = aggregatedStock[aggregatedKey] || incomingItems.find(i => i.name === outgoingItem.name && i.category === outgoingItem.category);
-            
-            const content = document.getElementById('returnDetailContent');
-            
-            content.innerHTML = `
-                <div class="space-y-3 p-4 bg-gray-50 rounded-xl">
-                    <h4 class="font-bold text-lg text-gray-900">${outgoingItem.name}</h4>
-                    <p><span class="font-semibold">Peminjam:</span> ${outgoingItem.penerima}</p>
-                    <p><span class="font-semibold">Tanggal Pinjam:</span> ${new Date(outgoingItem.date).toLocaleDateString('id-ID')}</p>
-                    <p><span class="font-semibold">Jumlah Pinjam:</span> <span class="font-bold text-red-600">${outgoingItem.quantity} unit</span></p>
-                </div>
-
-                <div class="space-y-3 p-4 border border-blue-200 rounded-xl bg-blue-50">
-                    <h4 class="font-bold text-md text-blue-800">Informasi Gudang</h4>
-                    <p><span class="font-semibold">Kode Rak Asal:</span> <span class="font-bold">${incomingRef ? incomingRef.rackCode : 'N/A'}</span></p>
-                    <p><span class="font-semibold">Kondisi Saat Masuk:</span> 
-                        <span class="font-bold ${incomingRef && incomingRef.condition === 'Baik' ? 'text-green-600' : 'text-red-600'}">
-                            ${incomingRef ? incomingRef.condition : 'N/A'}
-                        </span>
-                    </p>
-                    <p><span class="font-semibold">Deskripsi:</span> ${incomingRef ? incomingRef.description : 'N/A'}</p>
-                </div>
-
-                <p class="text-sm text-center text-red-600 font-medium mt-4 p-2 bg-red-100 rounded-lg">
-                    ⚠️ Kembalikan barang sesuai pada rak-nya (${incomingRef ? incomingRef.rackCode : 'N/A'}).
-                </p>
-
-                <button onclick="confirmReturn('${outgoingItem.id}')" class="w-full bg-green-600 text-white py-3 mt-4 rounded-xl font-semibold hover:bg-green-700 transition-colors">
-                    Konfirmasi Pengembalian
+    }
+    
+    function showMessage(message, type = 'success') {
+        const messageContainer = document.getElementById('messageContainer');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `p-4 rounded-xl shadow-lg mb-4 slide-up ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`;
+        messageDiv.innerHTML = `
+            <div class="flex items-center justify-between">
+                <span>${message}</span>
+                <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
                 </button>
+            </div>
+        `;
+        messageContainer.appendChild(messageDiv);
+        
+        setTimeout(() => {
+            if (messageDiv.parentElement) {
+                messageDiv.remove();
+            }
+        }, 5000);
+    }
+
+    function openModal(id) {
+        document.getElementById(id).classList.add('is-open');
+        document.getElementById(id).classList.remove('opacity-0', 'pointer-events-none');
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('is-open');
+        document.getElementById(id).classList.add('opacity-0', 'pointer-events-none');
+    }
+
+    function updateAllDisplays() {
+        updateStockSummary();
+        updateStockTable();
+        updateOutgoingSelect();
+        updateBorrowedItemsList();
+    }
+
+    function updateStockSummary() {
+        const totalIncomingCount = incomingItems.reduce((sum, item) => sum + parseInt(item.quantity), 0);
+        const totalOutgoingCount = outgoingItems.reduce((sum, item) => sum + (item.returned ? 0 : parseInt(item.quantity)), 0);
+        const remainingStockCount = Object.values(aggregatedStock).reduce((sum, item) => sum + item.totalQuantity, 0);
+
+        document.getElementById('totalIncoming').textContent = totalIncomingCount;
+        document.getElementById('totalOutgoing').textContent = totalOutgoingCount;
+        document.getElementById('remainingStock').textContent = remainingStockCount;
+    }
+
+    function updateStockTable() {
+        const tbody = document.getElementById('stockTableBody');
+        const availableItems = Object.values(aggregatedStock).sort((a, b) => a.name.localeCompare(b.name));
+        
+        if (availableItems.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-12 text-center text-gray-500">Belum ada data stok barang.</td></tr>`;
+            return;
+        }
+        
+        tbody.innerHTML = availableItems.map(item => `
+            <tr class="hover:bg-gray-50 transition-colors duration-200">
+                <td class="px-6 py-4 font-semibold text-gray-900 cursor-pointer hover:text-blue-600" onclick="showStockDetail('${item.name}|${item.category}')">
+                    ${item.name}
+                </td>
+                <td class="px-6 py-4">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                        ${item.category}
+                    </span>
+                </td>
+                <td class="px-6 py-4 text-xl font-bold">${item.totalQuantity}</td>
+                <td class="px-6 py-4">
+                    <button onclick="showStockDetail('${item.name}|${item.category}')" class="text-blue-600 hover:text-blue-800 font-medium">
+                        Detail Akumulasi
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // Perbaikan di sini, pastikan fungsi menggunakan window.showStockDetail
+    window.showStockDetail = function(key) {
+        const item = aggregatedStock[key];
+        if (!item) return;
+
+        document.getElementById('stockDetailName').textContent = item.name;
+        const content = document.getElementById('stockDetailContent');
+        
+        const firstIncoming = item.incomingDetails.length > 0 ? item.incomingDetails[item.incomingDetails.length - 1] : null; 
+        
+        let html = `
+            <div class="bg-gray-50 p-4 rounded-xl space-y-2">
+                <p><span class="font-semibold">Kategori:</span> ${item.category}</p>
+                <p><span class="font-semibold">Deskripsi Awal:</span> ${firstIncoming ? firstIncoming.description : 'Tidak ada'}</p>
+                <p><span class="font-semibold">Kondisi Awal:</span> 
+                    <span class="${firstIncoming && firstIncoming.condition === 'Baik' ? 'text-green-600' : 'text-red-600'} font-bold">${firstIncoming ? firstIncoming.condition : 'N/A'}</span>
+                </p>
+            </div>
+            <h4 class="text-lg font-semibold border-b pb-1 mt-4">Riwayat Masuk (Akumulasi)</h4>
+        `;
+        
+        item.incomingDetails.forEach((detail, index) => {
+            html += `
+                <div class="border-l-4 border-green-400 pl-4 py-2 bg-white shadow-sm rounded-lg">
+                    <p class="font-medium text-gray-700">Batch #${index + 1} (${detail.quantity} unit)</p>
+                    <ul class="text-sm text-gray-600 space-y-0.5 mt-1">
+                        <li><span class="font-medium">Tanggal Masuk:</span> ${new Date(detail.date).toLocaleDateString('id-ID')}</li>
+                        <li><span class="font-medium">Ruang:</span> ${detail.room}</li>
+                        <li><span class="font-medium">Kode Rak:</span> ${detail.rackCode}</li>
+                    </ul>
+                </div>
             `;
-            openModal('returnDetailModal');
-        }
-
-        /**
-         * Konfirmasi Pengembalian Barang
-         */
-        async function confirmReturn(outgoingId) {
-            try {
-                await returnItemInDB(outgoingId);
-                closeModal('returnDetailModal');
-                showMessage(`✅ Barang berhasil dikembalikan! Stok diperbarui.`);
-            } catch (error) {
-                console.error('Return error:', error);
-                showMessage('❌ Gagal mengkonfirmasi pengembalian: ' + error.message, 'error');
-            }
-        }
-
-
-        // --- EXPORT FUNCTION ---
-
-        function exportToExcel() {
-            try {
-                const workbook = XLSX.utils.book_new();
-                
-                // 1. Stok Terkini
-                const currentStockData = Object.values(aggregatedStock).map(item => ({
-                    'Nama Barang': item.name,
-                    'Kategori': item.category,
-                    'Total Stok': item.totalQuantity,
-                    'Kode Rak Asal': item.rackCode || 'Tidak diketahui',
-                    'Kondisi Awal': item.condition || 'Tidak diketahui',
-                    'Deskripsi': item.description || 'Tidak ada'
-                }));
-                
-                // 2. Ringkasan
-                const totalIncoming = incomingItems.reduce((sum, item) => sum + parseInt(item.quantity), 0);
-                const totalOutgoing = outgoingItems.reduce((sum, item) => sum + (item.returned ? 0 : parseInt(item.quantity)), 0);
-                const remainingStock = Object.values(aggregatedStock).reduce((sum, item) => sum + item.totalQuantity, 0);
-                
-                const summaryData = [
-                    { 'Keterangan': 'Total Barang Masuk (Riwayat)', 'Jumlah': totalIncoming },
-                    { 'Keterangan': 'Total Barang Keluar (Belum Kembali)', 'Jumlah': totalOutgoing },
-                    { 'Keterangan': 'Sisa Stok Saat Ini', 'Jumlah': remainingStock },
-                ];
-                
-                const currentStockWS = XLSX.utils.json_to_sheet(currentStockData);
-                const summaryWS = XLSX.utils.json_to_sheet(summaryData);
-                
-                XLSX.utils.book_append_sheet(workbook, summaryWS, "Ringkasan");
-                XLSX.utils.book_append_sheet(workbook, currentStockWS, "Stok Terkini");
-                
-                const now = new Date();
-                const dateStr = now.toISOString().split('T')[0];
-                const filename = `GudangCeria_Inventory_${dateStr}.xlsx`;
-                
-                XLSX.writeFile(workbook, filename);
-                
-                showMessage('✅ Data berhasil diekspor ke Excel!');
-                
-            } catch (error) {
-                console.error('Export error:', error);
-                showMessage('❌ Gagal mengekspor data ke Excel', 'error');
-            }
-        }
-        
-        // --- EVENT LISTENERS ---
-        
-        // Form Barang Masuk
-        document.getElementById('incomingForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const form = e.target;
-            
-            const item = {
-                name: form.incomingItemName.value,
-                category: form.incomingCategory.value,
-                quantity: form.incomingQuantity.value,
-                room: form.incomingRoom.value,
-                rackCode: form.incomingRackCode.value,
-                description: form.incomingDescription.value,
-                condition: form.incomingCondition.value,
-                date: form.incomingDate.value,
-            };
-
-            try {
-                const rackCode = await addIncomingItemDB(item);
-                showMessage(`✅ Barang masuk '${item.name}' berhasil disimpan ke rak ${rackCode}!`);
-                form.reset();
-            } catch (error) {
-                console.error('Incoming item submission failed:', error);
-                showMessage('❌ Gagal menyimpan Barang Masuk: ' + error.message, 'error');
-            }
         });
+
+        content.innerHTML = html;
+        openModal('stockDetailModal');
+    }
+
+    function updateOutgoingSelect() {
+        const select = document.getElementById('outgoingItemSelect');
+        const availableItems = Object.values(aggregatedStock).filter(item => item.totalQuantity > 0).sort((a, b) => a.name.localeCompare(b.name));
         
-        // Form Barang Keluar
-        document.getElementById('outgoingForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const form = e.target;
-            const selectedKey = form.outgoingItemSelect.value;
-            const itemQuantity = parseInt(form.outgoingQuantity.value, 10);
-            const availableStock = aggregatedStock[selectedKey] ? aggregatedStock[selectedKey].totalQuantity : 0;
-
-            if (itemQuantity > availableStock) {
-                showMessage('⚠️ Gagal: Jumlah keluar melebihi stok yang tersedia.', 'error');
-                return;
-            }
-            
-            const [name, category] = selectedKey.split('|');
-            
-            const item = {
-                name: name,
-                category: category,
-                quantity: itemQuantity,
-                user: form.outgoingUser.value,
-                date: form.outgoingDate.value,
-            };
-
-            try {
-                await addOutgoingItemDB(item);
-                showMessage(`✅ Barang keluar '${item.name}' (${item.quantity} unit) berhasil dicatat!`);
-                form.reset();
-                updateOutgoingSelect(); // Refresh dropdown
-            } catch (error) {
-                console.error('Outgoing item submission failed:', error);
-                showMessage('❌ Gagal mencatat Barang Keluar: ' + error.message, 'error');
-            }
+        select.innerHTML = '<option value="">Pilih barang (Stok tersedia: 0)</option>';
+        
+        availableItems.forEach(item => {
+            const key = `${item.name}|${item.category}`;
+            const option = document.createElement('option');
+            option.value = key;
+            option.textContent = `${item.name} (${item.category}) - Stok: ${item.totalQuantity}`;
+            select.appendChild(option);
         });
+
+        // Event listener dipindahkan ke DOMContentLoaded
+    }
+    
+    function updateBorrowedItemsList() {
+        const container = document.getElementById('borrowedItemsList');
+        const borrowedItems = outgoingItems.filter(item => !item.returned).sort((a, b) => a.name.localeCompare(b.name));
         
-        // --- INITIAL LOAD ---
+        if (borrowedItems.length === 0) {
+            container.innerHTML = `<p class="text-center text-gray-500 py-4">Tidak ada barang yang sedang dipinjam.</p>`;
+            return;
+        }
+
+        container.innerHTML = borrowedItems.map(item => `
+            <div class="p-4 bg-white border border-gray-200 rounded-xl shadow-sm flex justify-between items-center">
+                <div>
+                    <h4 class="font-bold text-gray-900">${item.name} (${item.category})</h4>
+                    <p class="text-sm text-gray-600">Dipinjam oleh: ${item.penerima} | Jumlah: ${item.quantity}</p>
+                </div>
+                <button onclick="showReturnDetail('${item.id}')" class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-600 transition-colors">
+                    Cek & Kembalikan
+                </button>
+            </div>
+        `).join('');
+    }
+
+    // Perbaikan di sini, pastikan fungsi menggunakan window.showReturnDetail
+    window.showReturnDetail = function(outgoingId) {
+        const outgoingItem = outgoingItems.find(item => item.id == outgoingId);
+        if (!outgoingItem) return;
+
+        const aggregatedKey = `${outgoingItem.name}|${outgoingItem.category}`;
+        const incomingRef = aggregatedStock[aggregatedKey] || incomingItems.find(i => i.name === outgoingItem.name && i.category === outgoingItem.category);
+        
+        const content = document.getElementById('returnDetailContent');
+        
+        content.innerHTML = `
+            <div class="space-y-3 p-4 bg-gray-50 rounded-xl">
+                <h4 class="font-bold text-lg text-gray-900">${outgoingItem.name}</h4>
+                <p><span class="font-semibold">Peminjam:</span> ${outgoingItem.penerima}</p>
+                <p><span class="font-semibold">Tanggal Pinjam:</span> ${new Date(outgoingItem.date).toLocaleDateString('id-ID')}</p>
+                <p><span class="font-semibold">Jumlah Pinjam:</span> <span class="font-bold text-red-600">${outgoingItem.quantity} unit</span></p>
+            </div>
+
+            <div class="space-y-3 p-4 border border-blue-200 rounded-xl bg-blue-50">
+                <h4 class="font-bold text-md text-blue-800">Informasi Gudang</h4>
+                <p><span class="font-semibold">Kode Rak Asal:</span> <span class="font-bold">${incomingRef ? incomingRef.rackCode : 'N/A'}</span></p>
+                <p><span class="font-semibold">Kondisi Saat Masuk:</span> 
+                    <span class="font-bold ${incomingRef && incomingRef.condition === 'Baik' ? 'text-green-600' : 'text-red-600'}">
+                        ${incomingRef ? incomingRef.condition : 'N/A'}
+                    </span>
+                </p>
+                <p><span class="font-semibold">Deskripsi:</span> ${incomingRef ? incomingRef.description : 'N/A'}</p>
+            </div>
+
+            <p class="text-sm text-center text-red-600 font-medium mt-4 p-2 bg-red-100 rounded-lg">
+                ⚠️ Kembalikan barang sesuai pada rak-nya (${incomingRef ? incomingRef.rackCode : 'N/A'}).
+            </p>
+
+            <button onclick="confirmReturn('${outgoingItem.id}')" class="w-full bg-green-600 text-white py-3 mt-4 rounded-xl font-semibold hover:bg-green-700 transition-colors">
+                Konfirmasi Pengembalian
+            </button>
+        `;
+        openModal('returnDetailModal');
+    }
+
+    // Perbaikan di sini, pastikan fungsi menggunakan window.confirmReturn
+    window.confirmReturn = async function(outgoingId) {
+        try {
+            await returnItemInDB(outgoingId);
+            closeModal('returnDetailModal');
+            showMessage(`✅ Barang berhasil dikembalikan! Stok diperbarui.`);
+        } catch (error) {
+            console.error('Return error:', error);
+            showMessage('❌ Gagal mengkonfirmasi pengembalian: ' + error.message, 'error');
+        }
+    }
+
+
+    // --- EXPORT FUNCTION ---
+    window.exportToExcel = function() {
+        try {
+            const workbook = XLSX.utils.book_new();
+            
+            const currentStockData = Object.values(aggregatedStock).map(item => ({
+                'Nama Barang': item.name,
+                'Kategori': item.category,
+                'Total Stok': item.totalQuantity,
+                'Kode Rak Asal': item.rackCode || 'Tidak diketahui',
+                'Kondisi Awal': item.condition || 'Tidak diketahui',
+                'Deskripsi': item.description || 'Tidak ada'
+            }));
+            
+            const totalIncoming = incomingItems.reduce((sum, item) => sum + parseInt(item.quantity), 0);
+            const totalOutgoing = outgoingItems.reduce((sum, item) => sum + (item.returned ? 0 : parseInt(item.quantity)), 0);
+            const remainingStock = Object.values(aggregatedStock).reduce((sum, item) => sum + item.totalQuantity, 0);
+            
+            const summaryData = [
+                { 'Keterangan': 'Total Barang Masuk (Riwayat)', 'Jumlah': totalIncoming },
+                { 'Keterangan': 'Total Barang Keluar (Belum Kembali)', 'Jumlah': totalOutgoing },
+                { 'Keterangan': 'Sisa Stok Saat Ini', 'Jumlah': remainingStock },
+            ];
+            
+            const currentStockWS = XLSX.utils.json_to_sheet(currentStockData);
+            const summaryWS = XLSX.utils.json_to_sheet(summaryData);
+            
+            XLSX.utils.book_append_sheet(workbook, summaryWS, "Ringkasan");
+            XLSX.utils.book_append_sheet(workbook, currentStockWS, "Stok Terkini");
+            
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            const filename = `GudangCeria_Inventory_${dateStr}.xlsx`;
+            
+            XLSX.writeFile(workbook, filename);
+            
+            showMessage('✅ Data berhasil diekspor ke Excel!');
+            
+        } catch (error) {
+            console.error('Export error:', error);
+            showMessage('❌ Gagal mengekspor data ke Excel', 'error');
+        }
+    }
+    
+    // --- EVENT LISTENERS ---
+    
+    document.getElementById('incomingForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        
+        const item = {
+            name: form.incomingItemName.value,
+            category: form.incomingCategory.value,
+            quantity: form.incomingQuantity.value,
+            room: form.incomingRoom.value,
+            rackCode: form.incomingRackCode.value,
+            description: form.incomingDescription.value,
+            condition: form.incomingCondition.value,
+            date: form.incomingDate.value,
+        };
+
+        try {
+            const rackCode = await addIncomingItemDB(item);
+            showMessage(`✅ Barang masuk '${item.name}' berhasil disimpan ke rak ${rackCode}!`);
+            form.reset();
+        } catch (error) {
+            console.error('Incoming item submission failed:', error);
+            showMessage('❌ Gagal menyimpan Barang Masuk: ' + error.message, 'error');
+        }
+    });
+    
+    document.getElementById('outgoingForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const selectedKey = form.outgoingItemSelect.value;
+        const itemQuantity = parseInt(form.outgoingQuantity.value, 10);
+        const availableStock = aggregatedStock[selectedKey] ? aggregatedStock[selectedKey].totalQuantity : 0;
+
+        if (itemQuantity > availableStock) {
+            showMessage('⚠️ Gagal: Jumlah keluar melebihi stok yang tersedia.', 'error');
+            return;
+        }
+        
+        const [name, category] = selectedKey.split('|');
+        
+        const item = {
+            name: name,
+            category: category,
+            quantity: itemQuantity,
+            user: form.outgoingUser.value,
+            date: form.outgoingDate.value,
+        };
+
+        try {
+            await addOutgoingItemDB(item);
+            showMessage(`✅ Barang keluar '${item.name}' (${item.quantity} unit) berhasil dicatat!`);
+            form.reset();
+            updateOutgoingSelect();
+        } catch (error) {
+            console.error('Outgoing item submission failed:', error);
+            showMessage('❌ Gagal mencatat Barang Keluar: ' + error.message, 'error');
+        }
+    });
+    
+    // Event listener untuk update Stok Tersedia saat dropdown diubah
+    document.getElementById('outgoingItemSelect').addEventListener('change', function() {
+        const selectedKey = this.value;
+        const availableStockSpan = document.getElementById('availableStock');
+        const quantityInput = document.getElementById('outgoingQuantity');
+        
+        if (selectedKey && aggregatedStock[selectedKey]) {
+            const stock = aggregatedStock[selectedKey].totalQuantity;
+            availableStockSpan.textContent = stock;
+            quantityInput.max = stock;
+            quantityInput.value = '';
+        } else {
+            availableStockSpan.textContent = '0';
+            quantityInput.max = '';
+            quantityInput.value = '';
+        }
+    });
+
+
+    // --- INITIAL LOAD ---
+    document.addEventListener('DOMContentLoaded', () => {
         fetchData();
         showTab('stock');
-// ===========================================
-// 9. EKSPOR SEMUA FUNGSI KE GLOBAL (AGAR BISA DIPANGGIL BUTTON)
-// ===========================================
-window.showTab = showTab;
-window.showMessage = showMessage;
-window.openModal = openModal;
-window.closeModal = closeModal;
-window.showStockDetail = typeof showStockDetail !== "undefined" ? showStockDetail : () => {};
-window.showReturnDetail = typeof showReturnDetail !== "undefined" ? showReturnDetail : () => {};
-window.confirmReturn = typeof confirmReturn !== "undefined" ? confirmReturn : () => {};
-window.exportToExcel = exportToExcel;
+    });
+
+    // ===========================================
+    // 5. EKSPOR SEMUA FUNGSI KE GLOBAL (WAJIB)
+    // ===========================================
+    window.showTab = showTab;
+    window.showMessage = showMessage;
+    window.openModal = openModal;
+    window.closeModal = closeModal;
+    // showStockDetail, showReturnDetail, confirmReturn, exportToExcel sudah di-define sebagai window.function
     
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
