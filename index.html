@@ -597,64 +597,48 @@
          * Menampilkan detail item (akumulasi) saat diklik
          */
         function showStockDetail(key) {
-            const item = aggregatedStock[key];
-            if (!item) return;
+    const item = aggregatedStock[key];
+    if (!item) return;
 
-            document.getElementById('stockDetailName').textContent = item.name;
-            const content = document.getElementById('stockDetailContent');
+    document.getElementById('stockDetailName').textContent = item.name;
+    const content = document.getElementById('stockDetailContent');
+    
+    // Tentukan item referensi pertama untuk Deskripsi dan Kondisi Awal
+    const firstIncoming = item.incomingDetails[item.incomingDetails.length - 1]; 
+    
+    let html = `
+        <div class="bg-gray-50 p-4 rounded-xl space-y-2">
+            <p><span class="font-semibold">Kategori:</span> ${item.category}</p>
+            <p><span class="font-semibold">Harga Beli Terakhir:</span> ${formatRupiah(item.buyPrice || 0)}</p> 
             
-            let html = `
-                <div class="bg-gray-50 p-4 rounded-xl space-y-2">
-                    <p><span class="font-semibold">Kategori:</span> ${item.category}</p>
-                    <p><span class="font-semibold">Deskripsi (Input Pertama):</span> ${item.description || 'Tidak ada'}</p>
-                    <p><span class="font-semibold">Kondisi (Input Pertama):</span> 
-                        <span class="${item.condition === 'Baik' ? 'text-green-600' : 'text-red-600'} font-bold">${item.condition}</span>
-                    </p>
-                </div>
-                <h4 class="text-lg font-semibold border-b pb-1 mt-4">Riwayat Masuk (Akumulasi)</h4>
-                
-            `;
-			if (!item) return;
+            <p><span class="font-semibold">Deskripsi Awal:</span> ${firstIncoming ? firstIncoming.description : 'Tidak ada'}</p>
+            <p><span class="font-semibold">Kondisi Awal:</span> 
+                <span class="${firstIncoming && firstIncoming.condition === 'Baik' ? 'text-green-600' : 'text-red-600'} font-bold">
+                    ${firstIncoming ? firstIncoming.condition : 'N/A'}
+                </span>
+            </p>
+        </div>
 
-            document.getElementById('stockDetailName').textContent = item.name;
-            const content = document.getElementById('stockDetailContent');
-            
-            // Tentukan item referensi pertama untuk Deskripsi dan Kondisi Awal
-            const firstIncoming = item.incomingDetails[item.incomingDetails.length - 1]; // Asumsi riwayat masuk diurutkan dari baru ke lama saat fetch, ambil yang terakhir
-            
-            let html = `
-                <div class="bg-gray-50 p-4 rounded-xl space-y-2">
-                    <p><span class="font-semibold">Kategori:</span> ${item.category}</p>
-                    <p><span class="font-semibold">Harga Beli Terakhir:</span> ${formatRupiah(item.buyPrice || 0)}</p> 
-                    
-                    <p><span class="font-semibold">Deskripsi Awal:</span> ${firstIncoming ? firstIncoming.description : 'Tidak ada'}</p>
-                    <p><span class="font-semibold">Kondisi Awal:</span> 
-                        <span class="${firstIncoming && firstIncoming.condition === 'Baik' ? 'text-green-600' : 'text-red-600'} font-bold">${firstIncoming ? firstIncoming.condition : 'N/A'}</span>
-                    </p>
-                </div>
-       
-         <h4 class="text-lg font-semibold border-b pb-1 mt-4">Riwayat Masuk (Akumulasi)</h4>
-                
-            `;
-            // Sisanya tetap sama, menampilkan detail setiap batch
-            
-            // Tampilkan detail setiap kali barang masuk
-            item.incomingDetails.forEach((detail, index) => {
-                html += `
-                    <div class="border-l-4 border-green-400 pl-4 py-2 bg-white shadow-sm rounded-lg">
-                        <p class="font-medium text-gray-700">Batch #${index + 1} (${detail.quantity} unit)</p>
-                        <ul class="text-sm text-gray-600 space-y-0.5 mt-1">
-                            <li><span class="font-medium">Tanggal Masuk:</span> ${new Date(detail.date).toLocaleDateString('id-ID')}</li>
-                            <li><span class="font-medium">Ruang:</span> ${detail.room}</li>
-                            <li><span class="font-medium">Kode Rak:</span> ${detail.rackCode}</li>
-                        </ul>
-                    </div>
-                `;
-            });
+        <h4 class="text-lg font-semibold border-b pb-1 mt-4">Riwayat Masuk (Akumulasi)</h4>
+    `;
 
-            content.innerHTML = html;
-            openModal('stockDetailModal');
-        }
+    // Loop semua riwayat masuk
+    item.incomingDetails.forEach((detail, index) => {
+        html += `
+            <div class="border-l-4 border-green-400 pl-4 py-2 bg-white shadow-sm rounded-lg">
+                <p class="font-medium text-gray-700">Batch #${index + 1} (${detail.quantity} unit)</p>
+                <ul class="text-sm text-gray-600 space-y-0.5 mt-1">
+                    <li><span class="font-medium">Tanggal Masuk:</span> ${new Date(detail.date).toLocaleDateString('id-ID')}</li>
+                    <li><span class="font-medium">Ruang:</span> ${detail.room}</li>
+                    <li><span class="font-medium">Kode Rak:</span> ${detail.rackCode}</li>
+                </ul>
+            </div>
+        `;
+    });
+
+    content.innerHTML = html;
+    openModal('stockDetailModal');
+}
 
         /**
          * Mengisi dropdown Barang Keluar
