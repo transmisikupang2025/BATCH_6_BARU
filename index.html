@@ -887,10 +887,21 @@
         // --- INITIAL LOAD ---
         fetchData();
         showTab('stock');
-
+// ===========================================
+// 9. EKSPOR SEMUA FUNGSI KE GLOBAL (AGAR BISA DIPANGGIL BUTTON)
+// ===========================================
+window.showTab = showTab;
+window.showMessage = showMessage;
+window.openModal = openModal;
+window.closeModal = closeModal;
+window.showStockDetail = typeof showStockDetail !== "undefined" ? showStockDetail : () => {};
+window.showReturnDetail = typeof showReturnDetail !== "undefined" ? showReturnDetail : () => {};
+window.confirmReturn = typeof confirmReturn !== "undefined" ? confirmReturn : () => {};
+window.exportToExcel = exportToExcel;
         </script>
 </body>
 </html>
+
 
 
 
